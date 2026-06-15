@@ -1,0 +1,14 @@
+.stdropdown-container {
+ 
+    border:0px !important;
+
+    background-color:rgb(249 249 249) !important;
+    margin-bottom: 6px !important;
+}
+.stsearch-box input{
+  border:0px !important;
+   background-color: rgb(249 249 249) !important;
+}
+.stsearch-box input:focus{
+  outline: none !important;
+}

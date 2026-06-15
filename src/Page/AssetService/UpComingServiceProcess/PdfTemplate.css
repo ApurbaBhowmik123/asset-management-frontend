@@ -1,0 +1,144 @@
+/* PdfTemplate.css */
+.pdf-container {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 10mm;
+  margin: 0;
+  background: white;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #000;
+  padding-bottom: 10px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  flex: 1;
+}
+
+.logo-right img {
+  height: 60px;
+  width: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+}
+
+.table td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  vertical-align: top;
+  font-size: 10px;
+}
+
+.system-info td {
+  height: 25px;
+  text-align: left;
+}
+
+.system-info input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-size: 10px;
+  padding: 2px;
+  outline: none;
+}
+
+.system-info input:read-only {
+  background: transparent;
+}
+
+.table-header {
+  background-color: #f0f0f0;
+  font-weight: bold;
+  text-align: center;
+}
+
+.activity-table .sl-col {
+  width: 8%;
+  text-align: center;
+}
+
+.activity-table .activity-col {
+  width: 20%;
+}
+
+.activity-table .description-col {
+  width: 40%;
+}
+
+.activity-table .quarter-col {
+  width: 8%;
+  text-align: center;
+}
+
+.activity-description {
+  font-size: 9px;
+  line-height: 1.1;
+}
+
+.pm-summary td {
+  height: 30px;
+  text-align: center;
+}
+
+.pm-summary td:first-child {
+  font-weight: bold;
+  background-color: #f0f0f0;
+  width: 15%;
+}
+
+.notes {
+  margin-top: 15px;
+  font-size: 10px;
+}
+
+/* Print specific styles */
+@media print {
+  .pdf-container {
+    width: 100%;
+    min-height: auto;
+    padding: 0;
+    margin: 0;
+  }
+
+  .table {
+    break-inside: avoid;
+  }
+
+  .header {
+    break-after: avoid;
+  }
+}
+
+/* Responsive adjustments for smaller screens */
+@media screen and (max-width: 768px) {
+  .pdf-container {
+    width: 100%;
+    padding: 5mm;
+    font-size: 10px;
+  }
+
+  .title {
+    font-size: 14px;
+  }
+
+  .logo-right img {
+    height: 40px;
+  }
+}

@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
+body {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif !important;
+  background-color: #f8f9fa !important;
+  color: #4F495B !important
+}
+
+::-webkit-scrollbar {
+  width: 0;
+}
+
+.Global-Button {
+  background-color: #DB3027 !important;
+  color: white !important;
+  text-transform: none !important;
+  padding: 4px 12px !important;
+  border: none !important;
+
+}
+
+.Global-Button1 {
+  background-color: #808E831A !important;
+  color: #696969 !important;
+  text-transform: none !important;
+  padding: 4px 8px !important;
+  border: none !important;
+
+}
+
+.Global-Button2 {
+  background-color: #1762d3 !important;
+  color: white !important;
+  text-transform: none !important;
+  padding: 6px 30px !important;
+  border: none !important;
+}
+
+.Global-Button12 {
+  background-color: transparent !important; 
+  color: #1762d3 !important;             
+  text-transform: none !important;
+  padding: 6px 30px !important;
+  border: 2px solid #1762d3 !important;   
+  border-radius: 4px;                    
+}
+
+.Global-Button3 {
+  background-color: #BBC9DE !important;
+  color: #48464C !important;
+  text-transform: none !important;
+  padding: 6px 30px !important;
+  border: none !important;
+}
+
+.Global-Button4 {
+  background-color: #EF443B !important;
+  color: white !important;
+  text-transform: none !important;
+  padding: 6px 14px !important;
+  border: none !important;
+}
+
+.Global-Button5 {
+  /* background-color: transparent !important; */
+  border: 1px solid #EF443B !important;
+  /* color: white !important; */
+  text-transform: none !important;
+  padding: 6px 14px !important;
+  border: none !important;
+}
+
+.Global-Button6 {
+  background-color: #EF443B !important;
+  color: white !important;
+  text-transform: none !important;
+  padding: 6px 30px !important;
+  border: none !important;
+}
+
+.Global-Button7 {
+  background-color: #1762d3 !important;
+  color: white !important;
+  text-transform: none !important;
+  padding: 3px 10px !important;
+  border: none !important;
+}
+
+
+
+.Global-Button8 {
+  background-color: #068310 !important;
+  color: white !important;
+  text-transform: none !important;
+  padding: 6px 10px !important;
+  border: none !important;
+}
+
+.Global-Button10 {
+  /* background-color: #BBC9DE !important; */
+  color: #48464C !important;
+  text-transform: none !important;
+  padding: 6px 30px !important;
+  border: none !important;
+
+}
+.line {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+}
+
+.reuired_field {
+  color: red;
+}
+
+/* Premium Global Table Header Styling */
+.MuiTableHead-root,
+.MuiTableHead-root tr,
+.MuiTableHead-root th {
+  background-color: #f1f5f9 !important;
+}
+.MuiTableHead-root th {
+  color: #334155 !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
