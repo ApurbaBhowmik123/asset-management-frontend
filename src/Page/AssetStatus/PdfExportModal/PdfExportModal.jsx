@@ -16,7 +16,7 @@ import autoTable from "jspdf-autotable";
 import { baseUrl } from "../../Api";
 import { dateTimeHelper } from "../../../Helper/DateTimeHelper/DateTimeHelper";
 import { productStatusHelper } from "../../../Helper/StatusHelper/StatusHelper";
-import Logo from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
+import { megathermLogoBase64 } from "../../../assets/Sidebarimages/logoBase64";
 
 const PdfExportModal = ({
   open,
@@ -40,26 +40,7 @@ const PdfExportModal = ({
     }
   }, [columns]);
 
-  // Function to convert image to base64
-  const getBase64FromImage = (url) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = url;
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        canvas.height = img.naturalHeight;
-        canvas.width = img.naturalWidth;
-        ctx.drawImage(img, 0, 0);
-        const dataURL = canvas.toDataURL("image/png");
-        resolve(dataURL);
-      };
-      img.onerror = () => {
-        resolve(null);
-      };
-    });
-  };
+  // Removed dynamic base64 generator
 
   // Handle column selection change
   const handleColumnSelectionChange = (columnKey) => {
@@ -246,12 +227,9 @@ const PdfExportModal = ({
       // Create a new PDF document in landscape mode
       const doc = new jsPDF("landscape");
 
-      // Convert logo to base64
-      const logoData = await getBase64FromImage(Logo);
-
-      // Add logo on the left side
-      if (logoData) {
-        doc.addImage(logoData, "PNG", 15, 10, 16, 16);
+      // Use hardcoded base64 logo
+      if (megathermLogoBase64) {
+        doc.addImage(megathermLogoBase64, "PNG", 14, 10, 20, 20);
       }
 
       // Add current date and created by on the right side

@@ -25,8 +25,9 @@ import { mkConfig, generateCsv, download } from "export-to-csv";
 import { useParams, useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import AdityaBirlaIcon from "../../assets/DashboardImages/AdityaBirla.png";
+import megathermLogo from "../../assets/Sidebarimages/Layer 1 1.jpeg";
 import { baseUrl } from "../Api";
+import { megathermLogoBase64 } from "../../assets/Sidebarimages/logoBase64";
 
 const csvConfig = mkConfig({ useKeysAsHeaders: true });
 
@@ -815,7 +816,7 @@ const Transfer = () => {
             }}
           >
             <div style={{ fontSize: "10px", lineHeight: "1.2" }}>
-              ICMS Procedures
+              Megatherm
               <br />
               Version 1.0
             </div>
@@ -847,7 +848,7 @@ const Transfer = () => {
                 style={{ fontSize: "8px", textAlign: "center", color: "#666" }}
               >
                 <img
-                  src={AdityaBirlaIcon}
+                  src={megathermLogoBase64}
                   alt="Company Logo"
                   style={{ maxWidth: "100%", maxHeight: "100%" }}
                 />

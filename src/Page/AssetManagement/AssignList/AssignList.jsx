@@ -297,10 +297,16 @@ const AssignList = () => {
             size: 120,
             Cell: ({ cell }) => cell.getValue() || 'N/A',
         }),
-        columnHelper.accessor('inventoryProductDetail.grInventoryProduct.product.subcategory.name', {
-            header: 'Subcategory',
-            size: 130,
-            Cell: ({ cell }) => cell.getValue() || 'N/A',
+        columnHelper.accessor('inventoryProductDetail.specValues', {
+            header: 'Attributes',
+            id: 'attributes',
+            size: 200,
+            Cell: ({ row }) => {
+                const invDetails = row.original.inventoryProductDetail;
+                const specValues = invDetails?.specValues?.length ? invDetails.specValues : invDetails?.grInventoryProduct?.product?.productSpecValue;
+                if (!specValues || specValues.length === 0) return 'N/A';
+                return specValues.map(s => `${s.specField?.name}: ${s.value}`).join(', ');
+            },
         }),
         columnHelper.accessor('inventoryProductDetail.grInventoryProduct.product.brand.name', {
             header: 'Brand',
@@ -323,8 +329,11 @@ const AssignList = () => {
                 assignment.assignedToLocation ? assignment.assignedToLocation.name : 'N/A',
             productName: assignment.inventoryProductDetail?.grInventoryProduct?.product?.name || 'N/A',
             category: assignment.inventoryProductDetail?.grInventoryProduct?.product?.category?.name || 'N/A',
-            subcategory: assignment.inventoryProductDetail?.grInventoryProduct?.product?.subcategory?.name || 'N/A',
             brand: assignment.inventoryProductDetail?.grInventoryProduct?.product?.brand?.name || 'N/A',
+            attributes: (() => {
+                const specValues = assignment.inventoryProductDetail?.specValues?.length ? assignment.inventoryProductDetail.specValues : assignment.inventoryProductDetail?.grInventoryProduct?.product?.productSpecValue;
+                return specValues?.length ? specValues.map(s => `${s.specField?.name}: ${s.value}`).join(', ') : 'N/A';
+            })()
             // endDate: assignment.endDate || 'N/A',
             // allocationExpired: assignment.endDate ?
             //     (new Date(assignment.endDate) < new Date() ? 'Yes' : 'No') : 'N/A'
@@ -379,7 +388,11 @@ const AssignList = () => {
         enableRowSelection: true,
         enableMultiRowSelection: true,
         enableColumnResizing: false,
-        enableColumnFilters: false,   // 👈 disables filter by column
+        enableColumnFilters: true,
+        initialState: {
+            showGlobalFilter: true,
+            showColumnFilters: false,
+        },
         paginationDisplayMode: 'pages',
         columnResizeMode: 'onChange',
         layoutMode: 'grid',

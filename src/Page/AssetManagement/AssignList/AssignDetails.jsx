@@ -68,7 +68,7 @@ const AssignDetails = () => {
               serialNumber: product?.serialNo1 || 'N/A',
               productName: product?.name || 'N/A',
               category: product?.category?.name || 'N/A',
-              subCategory: product?.subcategory?.name || 'N/A',
+              attributes: product?.specValues?.map(s => `${s.specField?.name}: ${s.value}`).join(', ') || 'N/A',
               warehouse: "Mumbai Warehouse",
               inventorProductId: product.inventorProductId
             })));
@@ -94,21 +94,7 @@ const AssignDetails = () => {
       }
     };
 
-    if (location.state?.assignment) {
-      setRowData(location.state.assignment);
-      setData(location.state.assignment.products.map(product => ({
-        serialId: location.state.assignment.assignedId?.slice(0,6),
-        serialNumber: product?.serialNo1 || 'N/A',
-        productName: product?.name || 'N/A',
-        category: product?.category?.name || 'N/A',
-        subCategory: product?.subcategory?.name || 'N/A',
-        warehouse: "Mumbai Warehouse",
-        inventorProductId: product.inventorProductId
-      })));
-      setIsLoading(false);
-    } else {
-      fetchAssignmentDetails();
-    }
+    fetchAssignmentDetails();
   }, [id, location.state]);
 
   const columnHelper = createMRTColumnHelper();
@@ -118,7 +104,7 @@ const AssignDetails = () => {
     columnHelper.accessor("serialNumber", { header: "Serial Number", size: 120 }),
     columnHelper.accessor("productName", { header: "Product Name", size: 150 }),
     columnHelper.accessor("category", { header: "Category", size: 120 }),
-    columnHelper.accessor("subCategory", { header: "Subcategory", size: 120 }),
+    columnHelper.accessor("attributes", { header: "Attributes", size: 200 }),
     columnHelper.accessor("warehouse", { header: "Warehouse", size: 150 }),
   ];
 
@@ -176,52 +162,39 @@ const AssignDetails = () => {
     ),
   });
 
- const handleDownloadAgreement = async () => {
-  if (!rowData?.handover?.signatureFile) {
-    setSnackbar({
-      open: true,
-      message: 'No agreement file available for download',
-      severity: 'warning'
-    });
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('token');
-    const fileUrl = rowData.handover.signatureFile;
-
-    const response = await fetch(fileUrl, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) throw new Error('Failed to download file');
-
-    const blob = await response.blob();
-
-    // Try to get filename from URL
-    let fileName = fileUrl.split('/').pop();
-
-    // If filename is missing, create one from user name & extension from mime type
-    if (!fileName || !fileName.includes('.')) {
-      const contentType = response.headers.get('Content-Type') || '';
-      const extension = contentType.split('/')[1] || 'file';
-      fileName = `Asset_Allocation_Agreement_${rowData?.assignedTo?.user?.name?.replace(/\s+/g, '_') || 'Asset'}.${extension}`;
+  const handleDownloadAgreement = async () => {
+    if (!rowData?.handover?.signatureFile) {
+      setSnackbar({
+        open: true,
+        message: 'No agreement file available for download',
+        severity: 'warning'
+      });
+      return;
     }
 
-    const url = window.URL.createObjectURL(blob);
+    try {
+    let fileUrl = rowData.handover.signatureFile;
+    if (fileUrl.startsWith('/')) {
+      fileUrl = `${baseUrl}${fileUrl}`;
+    }
+
     const link = document.createElement('a');
-    link.href = url;
+    link.href = fileUrl;
+    link.target = '_blank';
+    let fileName = fileUrl.split('/').pop() || `Asset_Allocation_Agreement_${rowData?.assignedTo?.user?.name?.replace(/\s+/g, '_') || 'Asset'}.pdf`;
     link.download = fileName;
     document.body.appendChild(link);
     link.click();
 
-    // Clean up
     setTimeout(() => {
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
     }, 100);
+    
+    setSnackbar({
+      open: true,
+      message: 'Opening agreement document...',
+      severity: 'success'
+    });
   } catch (error) {
     console.error('Error downloading agreement:', error);
     setSnackbar({

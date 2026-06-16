@@ -25,8 +25,9 @@ import { mkConfig, generateCsv, download } from "export-to-csv";
 import { useParams, useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import AdityaBirlaIcon from "../../../assets/DashboardImages/AdityaBirla.png";
+import megathermLogo from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
 import { baseUrl } from '../../Api';
+// import { megathermLogoBase64 } from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
 
 const csvConfig = mkConfig({ useKeysAsHeaders: true });
 
@@ -147,7 +148,7 @@ const Handover = () => {
         </Button>
       </Box>
     ),
-    
+
   });
 
   const handleFileUpload = (event) => {
@@ -415,7 +416,7 @@ const Handover = () => {
             borderBottom: "1px solid #000"
           }}>
             <div style={{ fontSize: "10px", lineHeight: "1.2" }}>
-              AMS <br />
+              Megatherm <br />
               Version 1.0
             </div>
             <div style={{ textAlign: "center", flexGrow: "1", margin: "0 20px" }}>
@@ -430,7 +431,7 @@ const Handover = () => {
               justifyContent: "center",
               backgroundColor: "#f0f0f0"
             }}>
-              <div style={{ fontSize: "8px", textAlign: "center", color: "#666" }}><img src={AdityaBirlaIcon} alt="Company Logo" /></div>
+              <div style={{ fontSize: "8px", textAlign: "center", color: "#666" }}><img src={megathermLogo} alt="Company Logo" style={{ maxWidth: "100%", maxHeight: "100%" }} /></div>
             </div>
           </div>
 
