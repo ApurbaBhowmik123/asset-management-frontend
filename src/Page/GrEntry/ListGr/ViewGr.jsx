@@ -1,877 +1,283 @@
 import {
   Box,
   Button,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
   Typography,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  InputLabel,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import React, { useEffect, useState } from "react";
-import Deleteicon1 from "../../../assets/EmployeeImages/Vector (1).png";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import {
-  createMRTColumnHelper,
-  MaterialReactTable,
-} from "material-react-table";
-import { mkConfig, generateCsv, download } from "export-to-csv";
+import { createMRTColumnHelper, MaterialReactTable } from "material-react-table";
 import { useNavigate, useParams } from "react-router-dom";
 import { baseUrl } from "../../Api";
+import axios from "axios";
+import { CustomTextField } from "../../../utils/CustomTextField";
 import { dateTimeHelper } from "../../../Helper/DateTimeHelper/DateTimeHelper";
+
+const textFieldStyles = {
+  "& .MuiOutlinedInput-root": {
+    "& fieldset": { borderColor: "#D9D9D9", borderRadius: "4px" },
+    "&:hover fieldset": { borderColor: "#D9D9D9" },
+    "&.Mui-focused fieldset": { borderColor: "#D9D9D9" },
+  },
+  "& .MuiInputBase-input": { padding: "8px 12px" },
+  backgroundColor: "#f9fafb",
+};
 
 const ViewGr = () => {
   const [grDetails, setGrDetails] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [vendors, setVendors] = useState([]);
-  const [editFormData, setEditFormData] = useState({
-    sapId: "",
-    sapDate: "",
-    invoiceNumber: "",
-    invoiceDate: "",
-    grId: "",
-    grDate: "",
-    vendorId: "",
-    description: "",
-  });
-  const [isSaving, setIsSaving] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
+  const [tableData, setTableData] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
+  
+  // Tag Modal State
+  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [tagData, setTagData] = useState({ warrantyTill: null, serialNo1: "", sapCode: "", modelName: "" });
+  const [specFields, setSpecFields] = useState([]);
+  const [specValues, setSpecValues] = useState({});
+  const [isTagging, setIsTagging] = useState(false);
 
   const navigate = useNavigate();
-  const params = useParams();
-  const { id } = params;
+  const { id } = useParams();
 
-  const inputLabelStyle = {
-    fontWeight: "medium",
-    marginBottom: "8px",
-    display: "block",
-    fontSize: "14px",
-    color: "#333",
+  useEffect(() => {
+    fetchGrDetails();
+  }, [id]);
+
+  const fetchGrDetails = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`${baseUrl}/gr/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      setGrDetails(res.data.data);
+      
+      const flattened = [];
+      res.data.data.inventoryProducts.forEach((ip) => {
+        ip.inventoryDetails.forEach((det) => {
+          flattened.push({
+            ...det,
+            grInventoryProduct: ip
+          });
+        });
+      });
+      setTableData(flattened);
+    } catch (error) {
+      console.error("error fetching GR details", error);
+      setSnackbar({ open: true, message: "Error fetching GR details", severity: "error" });
+    }
   };
 
-  const textFieldStyles = {
-    backgroundColor: "#f5f5f5",
-    borderRadius: 1,
-    "& .MuiInputBase-root": {
-      height: "40px",
-      display: "flex",
-      alignItems: "center",
-    },
-    "& .MuiInputBase-input": {
-      fontSize: "0.875rem",
-      padding: "8px 12px",
-      height: "100%",
-      boxSizing: "border-box",
-    },
-    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+  const handleOpenTagModal = async (row) => {
+    setSelectedItem(row);
+    setTagData({ warrantyTill: null, serialNo1: "", sapCode: "", modelName: "" });
+    setSpecValues({});
+    
+    // Fetch attributes for the category
+    try {
+      const categoryId = row.grInventoryProduct.categoryId;
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`${baseUrl}/catalog/categories/${categoryId}`, { headers: { Authorization: `Bearer ${token}` } });
+      setSpecFields(res.data.data?.categorySpecFields || []);
+    } catch (error) {
+      console.error("Error fetching spec fields", error);
+    }
+    
+    setIsTagModalOpen(true);
   };
 
-  const datePickerStyles = {
-    ...textFieldStyles,
-    width: "100%",
-
+  const handleTagSubmit = async () => {
+    setIsTagging(true);
+    try {
+      const token = localStorage.getItem("token");
+      const payload = {
+        inventoryProductDetailId: selectedItem.id,
+        serialNo1: tagData.serialNo1,
+        sapCode: tagData.sapCode,
+        modelName: tagData.modelName,
+        warrantyTill: tagData.warrantyTill ? tagData.warrantyTill.toISOString() : null,
+        specValues: Object.keys(specValues).map(id => ({ specFieldId: Number(id), value: specValues[id] }))
+      };
+      
+      await axios.post(`${baseUrl}/gr/tag-item`, payload, { headers: { Authorization: `Bearer ${token}` } });
+      
+      setSnackbar({ open: true, message: "Item tagged successfully", severity: "success" });
+      setIsTagModalOpen(false);
+      // Let the modal close immediately, then fetch updates
+      setTimeout(() => fetchGrDetails(), 100);
+    } catch (error) {
+      setSnackbar({ open: true, message: error.response?.data?.message || "Failed to tag item", severity: "error" });
+    } finally {
+      setIsTagging(false);
+    }
   };
-
-  const selectStyles = {
-    backgroundColor: "#f5f5f5",
-    "& .MuiInputBase-root": { height: "40px" },
-    "& .MuiSelect-select": {
-      padding: "8px 12px",
-      height: "100% !important",
-      boxSizing: "border-box",
-      display: "flex",
-      alignItems: "center",
-    },
-    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
-    width: "100%",
-  };
-
-  // CSV Configuration
-  const csvConfig = mkConfig({
-    fieldSeparator: ",",
-    decimalSeparator: ".",
-    useKeysAsHeaders: true,
-    filename: `GR_${grDetails?.grId || "export"}_${new Date().toISOString().split("T")[0]
-      }`,
-  });
 
   const columnHelper = createMRTColumnHelper();
   const columns = [
-    columnHelper.accessor("product.name", {
-      header: "Product",
+    columnHelper.accessor("grInventoryProduct.category.name", { header: "Asset Reference", size: 150 }),
+    columnHelper.accessor("grInventoryProduct.brand.name", { header: "Brand", size: 100 }),
+    columnHelper.accessor("modelName", { 
+      header: "Model Name", 
+      size: 120,
+      Cell: ({ cell }) => cell.getValue() || "-"
+    }),
+    columnHelper.accessor("specValues", {
+      header: "Attributes",
       size: 200,
       Cell: ({ row }) => {
-        const name = row.original.product?.name || "N/A";
-        const specValues = row.original.inventoryDetails?.[0]?.specValues || [];
-        const specs = specValues
-          .filter((sv) => sv.specField && sv.value)
-          .map((sv) => `${sv.specField.name}: ${sv.value}`);
-
-        return (
-          <Box>
-            <Typography sx={{ fontWeight: "600", fontSize: "0.875rem", color: "#333" }}>
-              {name}
-            </Typography>
-            {specs.length > 0 && (
-              <Box sx={{ mt: 0.5, display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                {specs.map((spec, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      backgroundColor: "#f1f5f9",
-                      color: "#475569",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                      fontSize: "11px",
-                      fontWeight: "500",
-                      border: "1px solid #e2e8f0",
-                    }}
-                  >
-                    {spec}
-                  </span>
-                ))}
-              </Box>
-            )}
-          </Box>
-        );
-      },
+        const specValues = row.original.specValues || [];
+        if (specValues.length === 0) return "-";
+        return specValues.map(sv => `${sv.specField?.name || ""}: ${sv.value}`).join(", ");
+      }
     }),
-    columnHelper.accessor("product.category.name", {
-      header: "Category",
+    columnHelper.accessor("uuid", { header: "Asset ID", size: 150 }),
+    columnHelper.accessor("assignedStatus", { 
+      header: "Status", 
       size: 100,
-      Cell: ({ row }) => row.original.product?.category?.name || "N/A",
-    }),
-
-
-    columnHelper.accessor("assetId", {
-      header: "Asset Id",
-      size: 150,
-      Cell: ({ row }) => {
-        const inventoryDetails = row.original.inventoryDetails || [];
-        return (
-          <div>
-            {inventoryDetails.map((item, index) => (
-              <div key={index}>{item.uuid || "N/A"}</div>
-            ))}
-          </div>
-        );
-      },
-    }),
-
-    columnHelper.accessor("quantity", {
-      header: "Quantity",
-      size: 80,
-    }),
-    columnHelper.accessor("freeQty", {
-      header: "Free Qty",
-      size: 80,
-      Cell: ({ cell }) => cell.getValue() || "0",
-    }),
-
-    columnHelper.accessor("ratePerPiece", {
-      header: "Price",
-      size: 80,
-      Cell: ({ cell }) => `₹${cell.getValue().toFixed(2)}`,
-    }),
-    columnHelper.accessor("totalAmount", {
-      header: "Total",
-      size: 100,
-      Cell: ({ cell }) => `₹${cell.getValue().toFixed(2)}`,
-    }),
-    columnHelper.accessor("description", {
-      header: "Description",
-      size: 150,
-      Cell: ({ cell }) => (
-        <div
-          style={{
-            maxWidth: "150px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {cell.getValue() || "N/A"}
-        </div>
-      ),
-    }),
-    columnHelper.accessor("inventoryDetails", {
-      header: "Serial Numbers",
-      size: 150,
-      Cell: ({ row }) => {
-        const inventoryDetails = row.original.inventoryDetails || [];
-        return (
-          <div>
-            {inventoryDetails.map((item, index) => (
-              <div key={index}>{item.serialNo1 || item.serialNo2 || "N/A"}</div>
-            ))}
-          </div>
-        );
-      },
-    }),
-    columnHelper.accessor("warrantyTill", {
-      header: "Warranty Till",
-      size: 120,
       Cell: ({ cell }) => {
-        const date = new Date(cell.getValue());
-        return date.toLocaleDateString();
-      },
+        const val = cell.getValue();
+        return (
+          <span style={{ color: val === "Untagged" ? "red" : "green", fontWeight: "bold" }}>
+            {val}
+          </span>
+        );
+      }
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: "Action",
+      size: 100,
+      Cell: ({ row }) => {
+        if (row.original.assignedStatus === "Untagged") {
+          return (
+            <Button variant="contained" size="small" onClick={() => handleOpenTagModal(row.original)} sx={{ bgcolor: "#DB3027" }}>
+              Tag Item
+            </Button>
+          );
+        }
+        return <Typography variant="caption" color="textSecondary">Tagged</Typography>;
+      }
     }),
   ];
 
-  const handleDownloadInvoice = async () => {
-    if (!grDetails?.invoiceFile) {
-      setSnackbar({
-        open: true,
-        message: "No agreement file available for download",
-        severity: "warning",
-      });
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem("token");
-
-      const fileUrl = grDetails?.invoiceFile;
-      const response = await fetch(fileUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error("Failed to download file");
-
-      const blob = await response.blob();
-
-      let fileName = fileUrl.split("/").pop();
-
-      if (!fileName || !fileName.includes(".")) {
-        const contentType = response.headers.get("Content-Type") || "";
-        const extension = contentType.split("/")[1] || "file";
-        fileName = `Download_Invoice_${grDetails?.invoiceNumber}.${extension}`;
-      }
-
-      const url = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-
-      link.href = url;
-
-      link.download = fileName;
-
-      document.body.appendChild(link);
-
-      link.click();
-
-      // Clean up
-
-      setTimeout(() => {
-        document.body.removeChild(link);
-
-        window.URL.revokeObjectURL(url);
-      }, 100);
-    } catch (error) {
-      console.error("Error downloading agreement:", error);
-
-      setSnackbar({
-        open: true,
-
-        message: "Failed to download agreement. Please try again.",
-
-        severity: "error",
-      });
-    }
-  };
-
-  const handleGoBack = () => {
-    navigate("/grentry/listgr");
-  };
-
-  const handleFetchGrDetails = async () => {
-    try {
-      const res = await fetch(`${baseUrl}/gr/${id}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      const data = await res?.json();
-      setGrDetails(data?.data);
-      if (data?.data) {
-        setEditFormData({
-          sapId: data.data.sapId || "",
-          sapDate: data.data.sapDate || "",
-          invoiceNumber: data.data.invoiceNumber || "",
-          invoiceDate: data.data.invoiceDate || "",
-          grId: data.data.grId || "",
-          grDate: data.data.grDate || "",
-          vendorId: data.data.vendor?.id || "",
-          description: data.data.description || "",
-        });
-      }
-    } catch (error) {
-      console.log("error", error);
-    }
-  };
-
-  const handleGetAllVendors = async () => {
-    try {
-      const res = await fetch(`${baseUrl}/super-admin/vendors`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      const data = await res?.json();
-      if (data?.status) {
-        // The API returns paginated data (data.data.data) or a flat array (data.data)
-        setVendors(data.data?.data || data.data || []);
-      }
-    } catch (error) {
-      console.error("error fetching vendors", error);
-    }
-  };
-
-  const handleSaveChanges = async () => {
-    setIsSaving(true);
-    try {
-      const res = await fetch(`${baseUrl}/gr/${grDetails.uuid}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(editFormData),
-      });
-      const data = await res.json();
-      if (data?.status) {
-        setSnackbar({
-          open: true,
-          message: "GR updated successfully",
-          severity: "success",
-        });
-        setIsEditing(false);
-        await handleFetchGrDetails();
-      } else {
-        setSnackbar({
-          open: true,
-          message: data?.message || "Failed to update GR",
-          severity: "error",
-        });
-      }
-    } catch (error) {
-      console.error("error updating GR", error);
-      setSnackbar({
-        open: true,
-        message: "An error occurred while saving changes",
-        severity: "error",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Function to format data for CSV export
-  const formatDataForExport = (data) => {
-    return data.map((row) => ({
-      Product: row.product?.name || "N/A",
-      Category: row.product?.category?.name || "N/A",
-      Subcategory: row.product?.subcategory?.name || "N/A",
-      Quantity: row.quantity || 0,
-      "Free Qty": row.freeQty || 0,
-      "Maintenance Freq (months)": row.maintenanceFrequency || "N/A",
-      Rate: row.ratePerPiece || 0,
-      Total: row.totalAmount || 0,
-      Description: row.description || "N/A",
-      "Serial Numbers":
-        row.inventoryDetails
-          ?.map((item) => item.serialNo1 || item.serialNo2)
-          .join(", ") || "N/A",
-      "Warranty Till": row.warrantyTill
-        ? new Date(row.warrantyTill).toLocaleDateString()
-        : "N/A",
-    }));
-  };
-
-  const handleExportRows = (rows) => {
-    const rowData = rows.map((row) => row.original);
-    const formattedData = formatDataForExport(rowData);
-    const csv = generateCsv(csvConfig)(formattedData);
-    download(csvConfig)(csv);
-  };
-
-  const handleExportData = () => {
-    const inventoryProducts = grDetails?.inventoryProducts || [];
-    const formattedData = formatDataForExport(inventoryProducts);
-    const csv = generateCsv(csvConfig)(formattedData);
-    download(csvConfig)(csv);
-  };
-
-  // Calculate grand total
-  const calculateGrandTotal = () => {
-    if (!grDetails?.inventoryProducts) return 0;
-    return grDetails.inventoryProducts.reduce((total, item) => {
-      return total + (item.totalAmount || 0);
-    }, 0);
-  };
-
-  useEffect(() => {
-    handleFetchGrDetails();
-    handleGetAllVendors();
-  }, []);
-
-  if (!grDetails) {
-    return <div>Loading...</div>;
-  }
+  if (!grDetails) return <Typography p={3}>Loading...</Typography>;
 
   return (
-    <div>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <ArrowBackIcon sx={{ cursor: "pointer" }} onClick={handleGoBack} />
-        <Box sx={{ display: "flex", gap: 2 }}>
-          {isEditing ? (
-            <>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setIsEditing(false);
-                  if (grDetails) {
-                    setEditFormData({
-                      sapId: grDetails.sapId || "",
-                      sapDate: grDetails.sapDate || "",
-                      invoiceNumber: grDetails.invoiceNumber || "",
-                      invoiceDate: grDetails.invoiceDate || "",
-                      grId: grDetails.grId || "",
-                      grDate: grDetails.grDate || "",
-                      vendorId: grDetails.vendor?.id || "",
-                      description: grDetails.description || "",
-                    });
-                  }
-                }}
-                disabled={isSaving}
-                sx={{ textTransform: "none" }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleSaveChanges}
-                disabled={isSaving}
-                sx={{ textTransform: "none", backgroundColor: "#DB3027", color: "white", "&:hover": { backgroundColor: "#b8241d" } }}
-              >
-                {isSaving ? "Saving..." : "Save"}
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="contained"
-              onClick={() => setIsEditing(true)}
-              sx={{ textTransform: "none", backgroundColor: "#DB3027", color: "white", "&:hover": { backgroundColor: "#b8241d" } }}
-            >
-              Edit
-            </Button>
-          )}
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+        <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}><ArrowBackIcon /></IconButton>
+        <Typography variant="h5" fontWeight="bold">View GR: {grDetails.grId}</Typography>
+      </Box>
+
+      {/* GR Header Info */}
+      <Box sx={{ bgcolor: "white", p: 3, borderRadius: 2, mb: 3, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 2 }}>
+        <Box>
+          <Typography variant="caption" color="textSecondary">Vendor</Typography>
+          <Typography fontWeight="bold">{grDetails.vendor?.name || "N/A"}</Typography>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="textSecondary">Invoice Number</Typography>
+          <Typography fontWeight="bold">{grDetails.invoiceNumber || "N/A"}</Typography>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="textSecondary">Invoice Date</Typography>
+          <Typography fontWeight="bold">{grDetails.invoiceDate ? dateTimeHelper.formatDate(grDetails.invoiceDate) : "N/A"}</Typography>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="textSecondary">GR Date</Typography>
+          <Typography fontWeight="bold">{grDetails.grDate ? dateTimeHelper.formatDate(grDetails.grDate) : "N/A"}</Typography>
         </Box>
       </Box>
-      <div style={{ backgroundColor: "#FFF", padding: "16px" }}>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-              gap: "16px",
-              marginBottom: "16px",
-            }}
-          >
-            {/* PO Id */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                PO Id <span style={{ color: "red" }}>*</span>
-              </InputLabel>
-              <TextField
-                fullWidth
-                size="small"
-                sx={textFieldStyles}
-                value={isEditing ? editFormData.sapId : (grDetails?.sapId || "N/A")}
-                disabled={!isEditing}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, sapId: e.target.value }))}
-              />
-            </div>
 
-            {/* PO Date */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                PO Date
-              </InputLabel>
-              <DatePicker
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: "small",
-                    sx: datePickerStyles,
+      {/* Untagged Items */}
+      {tableData.filter(d => d.assignedStatus === "Untagged").length > 0 && (
+        <Box sx={{ bgcolor: "white", p: 3, borderRadius: 2, mb: 3 }}>
+          <Typography variant="subtitle1" fontWeight="bold" mb={2}>Untagged Items</Typography>
+          <MaterialReactTable 
+            columns={columns} 
+            data={tableData.filter(d => d.assignedStatus === "Untagged")} 
+            muiTableContainerProps={{ sx: { overflowX: "auto" } }}
+          />
+        </Box>
+      )}
 
-                  },
-                }}
-                value={isEditing ? (editFormData.sapDate ? new Date(editFormData.sapDate) : null) : (grDetails?.sapDate ? new Date(grDetails?.sapDate) : null)}
-                disabled={!isEditing}
-                onChange={(newVal) => setEditFormData(prev => ({ ...prev, sapDate: newVal }))}
-              />
-            </div>
+      {/* Tagged / InStock Items */}
+      {tableData.filter(d => d.assignedStatus !== "Untagged").length > 0 && (
+        <Box sx={{ bgcolor: "white", p: 3, borderRadius: 2, mb: 3 }}>
+          <Typography variant="subtitle1" fontWeight="bold" mb={2}>Tagged / In-Stock Items</Typography>
+          <MaterialReactTable 
+            columns={columns} 
+            data={tableData.filter(d => d.assignedStatus !== "Untagged")} 
+            muiTableContainerProps={{ sx: { overflowX: "auto" } }}
+          />
+        </Box>
+      )}
 
-            {/* Invoice Number */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                Invoice Number <span style={{ color: "red" }}>*</span>
-              </InputLabel>
-              <TextField
-                value={isEditing ? editFormData.invoiceNumber : (grDetails?.invoiceNumber || "N/A")}
-                disabled={!isEditing}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, invoiceNumber: e.target.value }))}
-                fullWidth
-                size="small"
-                sx={textFieldStyles}
-              />
-            </div>
+      {/* Tag Modal */}
+      <Dialog open={isTagModalOpen} onClose={() => setIsTagModalOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: "bold", borderBottom: "1px solid #eee" }}>Tag Item</DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 2 }}>
+            <Box>
+              <InputLabel sx={{ color: "black", mb: 0.5 }}>Model Name</InputLabel>
+              <CustomTextField fullWidth size="small" value={tagData.modelName} onChange={e => setTagData({...tagData, modelName: e.target.value})} sx={textFieldStyles} />
+            </Box>
+            <Box>
+              <InputLabel sx={{ color: "black", mb: 0.5 }}>Serial Number</InputLabel>
+              <CustomTextField fullWidth size="small" value={tagData.serialNo1} onChange={e => setTagData({...tagData, serialNo1: e.target.value})} sx={textFieldStyles} />
+            </Box>
+            <Box>
+              <InputLabel sx={{ color: "black", mb: 0.5 }}>Tag No / SAP Code</InputLabel>
+              <CustomTextField fullWidth size="small" value={tagData.sapCode} onChange={e => setTagData({...tagData, sapCode: e.target.value})} sx={textFieldStyles} />
+            </Box>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <Box>
+                <InputLabel sx={{ color: "black", mb: 0.5 }}>Warranty Expiry</InputLabel>
+                <DatePicker value={tagData.warrantyTill} onChange={date => setTagData({...tagData, warrantyTill: date})} renderInput={(params) => <TextField {...params} fullWidth size="small" sx={textFieldStyles} />} />
+              </Box>
+            </LocalizationProvider>
 
-            {/* Invoice Date */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                Invoice Date <span style={{ color: "red" }}>*</span>
-              </InputLabel>
-              <DatePicker
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: "small",
-                    sx: datePickerStyles,
-                  },
-                }}
-                value={isEditing ? (editFormData.invoiceDate ? new Date(editFormData.invoiceDate) : null) : (grDetails?.invoiceDate ? new Date(grDetails?.invoiceDate) : null)}
-                disabled={!isEditing}
-                onChange={(newVal) => setEditFormData(prev => ({ ...prev, invoiceDate: newVal }))}
-              />
-            </div>
-
-            {/* GR Id */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                SAP GR Id <span style={{ color: "red" }}>*</span>
-              </InputLabel>
-              <TextField
-                value={isEditing ? editFormData.grId : (grDetails?.grId || "N/A")}
-                disabled={!isEditing}
-                onChange={(e) => setEditFormData(prev => ({ ...prev, grId: e.target.value }))}
-                fullWidth
-                size="small"
-                sx={textFieldStyles}
-              />
-            </div>
-
-            {/* GR Date */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                SAP GR Date <span style={{ color: "red" }}>*</span>
-              </InputLabel>
-              <DatePicker
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    size: "small",
-                    sx: datePickerStyles,
-                  },
-                }}
-                value={isEditing ? (editFormData.grDate ? new Date(editFormData.grDate) : null) : (grDetails?.grDate ? new Date(grDetails?.grDate) : null)}
-                disabled={!isEditing}
-                onChange={(newVal) => setEditFormData(prev => ({ ...prev, grDate: newVal }))}
-              />
-            </div>
-
-            {/* Vendor */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                Select Vendor <span style={{ color: "red" }}>*</span>
-              </InputLabel>
-              <FormControl fullWidth size="small" sx={selectStyles}>
-                <Select
-                  value={isEditing ? editFormData.vendorId : (grDetails?.vendor?.id || "")}
-                  disabled={!isEditing}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, vendorId: e.target.value }))}
-                  displayEmpty
-                  renderValue={(selected) => {
-                    if (!selected) {
-                      return "Select Vendor";
-                    }
-                    const found = vendors.find(v => v.id === selected) || grDetails?.vendor;
-                    return found?.name || "N/A";
-                  }}
-                >
-                  {vendors.map((vendor) => (
-                    <MenuItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </MenuItem>
+            {specFields.length > 0 && (
+              <Box mt={2}>
+                <Typography variant="subtitle2" fontWeight="bold" mb={1} color="primary">Asset Attributes</Typography>
+                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                  {specFields.map((f) => (
+                    <Box key={f.specField.id}>
+                      <InputLabel sx={{ color: "black", mb: 0.5, fontSize: "13px" }}>{f.specField.name} {f.specField.unit ? `(${f.specField.unit})` : ""}</InputLabel>
+                      <CustomTextField 
+                        fullWidth size="small" 
+                        value={specValues[f.specField.id] || ""} 
+                        onChange={e => setSpecValues({...specValues, [f.specField.id]: e.target.value})} 
+                        sx={textFieldStyles} 
+                      />
+                    </Box>
                   ))}
-                </Select>
-              </FormControl>
-            </div>
-
-            {/* Unit */}
-            {/* Unit */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                Unit <span style={{ color: "red" }}>*</span>
-              </InputLabel>
-              <FormControl fullWidth size="small" sx={selectStyles}>
-                <Select
-                  value={
-                    grDetails?.inventoryProducts?.[0]?.inventoryDetails?.[0]
-                      ?.unit?.id || ""
-                  }
-                  disabled
-                  displayEmpty
-                  renderValue={(selected) => {
-                    if (!selected) {
-                      return "Select Unit";
-                    }
-                    return (
-                      grDetails?.inventoryProducts?.[0]?.inventoryDetails?.[0]
-                        ?.unit?.name || "N/A"
-                    );
-                  }}
-                >
-                  <MenuItem
-                    value={
-                      grDetails?.inventoryProducts?.[0]?.inventoryDetails?.[0]
-                        ?.unit?.id || ""
-                    }
-                  >
-                    {grDetails?.inventoryProducts?.[0]?.inventoryDetails?.[0]
-                      ?.unit?.name || "N/A"}
-                  </MenuItem>
-                </Select>
-              </FormControl>
-            </div>
-
-            {/* Location */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>
-                Location <span style={{ color: "red" }}>*</span>
-              </InputLabel>
-              <TextField
-                fullWidth
-                size="small"
-                sx={textFieldStyles}
-                value={
-                  grDetails?.inventoryProducts?.[0]?.inventoryDetails?.[0]?.location?.name ||
-                  "N/A"
-                }
-                disabled
-              />
-            </div>
-
-
-            {/* Created By */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>Created By</InputLabel>
-              <TextField
-                fullWidth
-                size="small"
-                sx={textFieldStyles}
-                value={grDetails?.createdUser?.name || "N/A"}
-                disabled
-              />
-            </div>
-
-            {/* Created At */}
-            <div>
-              <InputLabel sx={inputLabelStyle}>Created At</InputLabel>
-              <TextField
-                fullWidth
-                size="small"
-                sx={textFieldStyles}
-                value={dateTimeHelper.formatDate(grDetails?.createdAt) || "N/A"}
-                disabled
-              />
-            </div>
-
-            {/* Download */}
-            {/* <div>
-              <InputLabel sx={inputLabelStyle}>Download Invoice</InputLabel>
-              <Box sx={{ display: "flex", gap: 2 }}>
-                <Box>
-                  <Button
-                    onClick={handleDownloadInvoice}
-                    className="Global-Button4"
-                  >
-                    Download Invoice
-                  </Button>
                 </Box>
               </Box>
-            </div> */}
-            {grDetails?.invoiceFile && (
-              <div>
-                <InputLabel sx={inputLabelStyle}>Download Invoice</InputLabel>
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <Box>
-                    <Button
-                      onClick={handleDownloadInvoice}
-                      className="Global-Button4"
-                    >
-                      Download Invoice
-                    </Button>
-                  </Box>
-                </Box>
-              </div>
             )}
-          </div>
-
-          {/**Table */}
-          <Box
-            style={{ marginTop: "2rem" }}
-            sx={{
-              width: {
-                xs: "100%",
-                sm: "100%",
-                md: "100%",
-                lg: "1000px",
-                xl: "1400px",
-              },
-              overflow: "auto",
-              mx: "auto",
-              px: { xs: 1, sm: 1 },
-            }}
-          >
-            <MaterialReactTable
-              columns={columns}
-              data={grDetails?.inventoryProducts || []}
-              initialState={{
-                density: "compact",
-              }}
-              muiTableHeadCellProps={{
-                sx: {
-                  backgroundColor: "#FFE3E1",
-                  color: "#333",
-                },
-              }}
-              muiTableContainerProps={{
-                sx: {
-                  width: "100%",
-                  overflowX: "auto",
-                  maxWidth: "100%",
-                  "&::-webkit-scrollbar": {
-                    height: "8px",
-                    width: "8px",
-                  },
-                  "&::-webkit-scrollbar-track": {
-                    background: "#f1f1f1",
-                  },
-                  "&::-webkit-scrollbar-thumb": {
-                    backgroundColor: "#888",
-                    borderRadius: "8px",
-                  },
-                  "&::-webkit-scrollbar-thumb:hover": {
-                    background: "#555",
-                  },
-                },
-              }}
-
-              renderTopToolbarCustomActions={({ table }) => (
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                  {/* <Button
-                    onClick={handleExportData}
-                    startIcon={<FileDownloadIcon />}
-                    className="Global-Button4"
-                    variant="outlined"
-                    size="small"
-                  >
-                    Export All Data
-                  </Button>
-                  <Button
-                    onClick={() =>
-                      handleExportRows(table.getPrePaginationRowModel().rows)
-                    }
-                    startIcon={<FileDownloadIcon />}
-                    className="Global-Button4"
-                    variant="outlined"
-                    size="small"
-                  >
-                    Export All Rows
-                  </Button>
-                  <Button
-                    onClick={() => handleExportRows(table.getRowModel().rows)}
-                    startIcon={<FileDownloadIcon />}
-                    className="Global-Button4"
-                    variant="outlined"
-                    size="small"
-                  >
-                    Export Page Rows
-                  </Button>
-                  <Button
-                    disabled={
-                      !table.getIsSomeRowsSelected() &&
-                      !table.getIsAllRowsSelected()
-                    }
-                    onClick={() =>
-                      handleExportRows(table.getSelectedRowModel().rows)
-                    }
-                    startIcon={<FileDownloadIcon />}
-                    className="Global-Button5"
-                    variant="outlined"
-                    size="small"
-                  >
-                    Export Selected Rows
-                  </Button> */}
-                </Box>
-              )}
-              renderBottomToolbar={({ table }) => (
-                <div
-                  style={{
-                    padding: "12px 16px",
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                    gap: "16px",
-                    border: "1px solid #e0e0e0",
-                    marginTop: "-1px",
-                  }}
-                >
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Grand Total: ₹{calculateGrandTotal()}
-                  </Typography>
-                </div>
-              )}
-            />
           </Box>
-        </LocalizationProvider>
-      </div>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar({ ...snackbar, open: false })} sx={{ width: "100%" }}>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: "1px solid #eee", p: 2 }}>
+          <Button onClick={() => setIsTagModalOpen(false)} color="inherit" sx={{ textTransform: "none" }}>Cancel</Button>
+          <Button onClick={handleTagSubmit} variant="contained" disabled={isTagging} sx={{ bgcolor: "#DB3027", textTransform: "none" }}>
+            {isTagging ? "Tagging..." : "Tag"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </div>
+    </Box>
   );
 };
 

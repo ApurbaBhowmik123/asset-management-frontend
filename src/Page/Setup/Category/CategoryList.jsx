@@ -64,7 +64,7 @@ const CategoryList = () => {
         size: 50,
       }),
       columnHelper.accessor("name", {
-        header: "Category Name",
+        header: "Product Name",
         size: 120,
       }),
       columnHelper.accessor("assetType", {
@@ -566,7 +566,7 @@ const CategoryList = () => {
               startIcon={<AddIcon />}
               onClick={handleAddCategory}
             >
-              Add Category
+              Add Asset Reference
             </Button>
           </Box>
           <Box

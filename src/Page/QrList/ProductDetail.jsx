@@ -39,10 +39,9 @@ const ProductDetail = () => {
                     const data = result.data;
                     setProductData({
                         assetId: data.uuid,
-                        subcategory:
-                            data.grInventoryProduct?.product?.subcategory?.name || "-",
+                        subcategory: "-",
                         grDate: data.grInventoryProduct?.grDetails?.grDate || null,
-                        productName: data.grInventoryProduct?.product?.name || "-",
+                        productName: data.grInventoryProduct?.category?.name || "-",
                         serialNo: data.serialNo1 || "-",
                         unit:
                             data.unit?.name || "-",

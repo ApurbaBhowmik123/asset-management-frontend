@@ -225,19 +225,19 @@ const CategoryAdd = ({ onBack, editingCategory, onUpdate }) => {
             <ArrowLeft />
           </IconButton>
           <Typography fontSize={16} fontWeight={600} variant="subtitle1">
-            {editingCategory ? "Edit Category" : "Add Category"}
+            {editingCategory ? "Edit Asset Reference" : "Add Asset Reference"}
           </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          {!editingCategory && (
+            <Button
+              className="Global-Button4"
+              startIcon={<AddIcon />}
+              onClick={handleAddRow}
+            >
+              Add Asset Reference Row
+            </Button>
+          )}
         </Box>
-
-        {!editingCategory && (
-          <Button
-            className="Global-Button"
-            startIcon={<AddIcon />}
-            onClick={handleAddRow}
-          >
-            Add Category Row
-          </Button>
-        )}
       </Box>
 
       <Box
@@ -251,12 +251,7 @@ const CategoryAdd = ({ onBack, editingCategory, onUpdate }) => {
         {categories.map((category, index) => (
           <Box
             key={index}
-            sx={{
-              border: "1px solid #dee2e6",
-              borderRadius: 2,
-              p: 2,
-              mb: 2,
-            }}
+            sx={{ p: 2, border: "1px solid #ddd", borderRadius: "8px", mb: 3 }}
           >
             {/* Row header */}
             <Box
@@ -267,7 +262,7 @@ const CategoryAdd = ({ onBack, editingCategory, onUpdate }) => {
                 mb: 2,
               }}
             >
-              <Typography fontWeight={600}>{`Category #${index + 1
+              <Typography fontWeight={600}>{`Asset Reference #${index + 1
                 }`}</Typography>
               {categories.length > 1 && !editingCategory && (
                 <IconButton
@@ -347,18 +342,13 @@ const CategoryAdd = ({ onBack, editingCategory, onUpdate }) => {
               </Box>
             )}
 
-            {/* Category Name + Abbreviated Name */}
+            {/* Product Name + Abbreviated Name */}
             <Box
-              sx={{
-                display: "flex",
-                gap: 2,
-                mb: 2,
-                flexWrap: "wrap",
-              }}
+              sx={{ display: "flex", gap: 3, mb: 2, flexDirection: { xs: "column", md: "row" } }}
             >
-              <Box sx={{ flex: "2 1 250px" }}>
+              <Box sx={{ flex: 1 }}>
                 <Typography fontWeight={500} fontSize={13} mb={0.5}>
-                  Category Name *
+                  Product Name *
                 </Typography>
                 <CustomTextField
                   fullWidth
@@ -461,7 +451,7 @@ const CategoryAdd = ({ onBack, editingCategory, onUpdate }) => {
 
         <Box mt={3} display="flex" justifyContent="center">
           <Button className="Global-Button2" onClick={handleSave}>
-            {editingCategory ? "Update Category" : "Save All"}
+            {editingCategory ? "Update Asset Reference" : "Save All"}
           </Button>
         </Box>
       </Box>

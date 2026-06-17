@@ -100,7 +100,7 @@ const QR = () => {
               mappedData.push({
                 assetId: detail.uuid,
                 serialNo: detail.serialNo1 || detail.serialNo2 || "N/A",
-                product: inventoryProduct.product?.name || "N/A",
+                product: inventoryProduct.category?.name || "N/A",
               });
             });
           }

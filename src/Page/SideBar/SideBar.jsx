@@ -297,6 +297,7 @@ const Sidebar = ({
           {/* ACL */}
           {hasPermission("read-roles") || hasPermission("read-permissions") ? (
             <>
+              <SectionHeader title="Role & Permissions" />
               {renderItem("ACL", reportIcon, null, "acl", true, null, "read-roles")}
               <Collapse in={openSection === "acl"} timeout="auto" unmountOnExit>
                 {renderSubItemList([
@@ -321,7 +322,7 @@ const Sidebar = ({
             hasPermission("read-departments") || hasPermission("read-categories") ||
             hasPermission("read-subcategories") || hasPermission("read-product") ? (
             <>
-              <SectionHeader title="MASTER SETUP" />
+              <SectionHeader title="MASTER" />
               {renderItem("Setup", setupIcon, setupIcon1, "setup", true, null)}
               <Collapse in={openSection === "setup"} timeout="auto" unmountOnExit>
                 {renderSubItemList([
@@ -356,14 +357,9 @@ const Sidebar = ({
                     requiredPermission: "read-departments"
                   },
                   {
-                    label: "Category",
+                    label: "Asset Reference",
                     path: "/setup/category/categorylist",
                     requiredPermission: "read-categories"
-                  },
-                  {
-                    label: "Asset Reference",
-                    path: "/setup/product/productlist",
-                    requiredPermission: "read-product"
                   },
                   // { 
                   //   label: "Email", 
@@ -378,7 +374,7 @@ const Sidebar = ({
           {/* Software */}
           {hasPermission("software-module") && (
             <>
-              <SectionHeader title="MASTER SOFTWARE" requiredPermission="software-module" />
+              <SectionHeader title="SOFTWARE" requiredPermission="software-module" />
               {renderItem("Software", softwareIcon, softwareIcon, "software", true, null, "software-module")}
               <Collapse in={openSection === "software"} timeout="auto" unmountOnExit>
                 {renderSubItemList([
