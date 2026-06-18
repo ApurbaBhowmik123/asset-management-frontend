@@ -224,7 +224,7 @@ const CreateGr = () => {
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: "100%", overflowX: "hidden" }}>
+    <Box sx={{ p: 3 }}>
       <Typography variant="h5" fontWeight="bold" mb={3}>Add New GR</Typography>
       
       {/* General Details */}
@@ -361,14 +361,15 @@ const CreateGr = () => {
 
       {/* Added Items Table */}
       {addedItems.length > 0 && (
-        <Box sx={{ bgcolor: "white", p: 3, borderRadius: 2, mb: 3, width: "100%", maxWidth: "100%", overflow: "hidden" }}>
+        <Box sx={{ bgcolor: "white", p: 3, borderRadius: 2, mb: 3, width: "100%", boxSizing: "border-box" }}>
           <Typography variant="subtitle1" fontWeight="bold" mb={2}>Added Items</Typography>
           <MaterialReactTable 
             columns={columns} 
             data={addedItems} 
             enablePagination={false}
-            muiTablePaperProps={{ sx: { width: "100%", maxWidth: "100%", overflow: "hidden" } }}
-            muiTableContainerProps={{ sx: { maxHeight: "400px", maxWidth: "100%", overflowX: "auto" } }}
+            layoutMode="grid"
+            muiTablePaperProps={{ elevation: 0, sx: { border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden" } }}
+            muiTableContainerProps={{ sx: { maxHeight: "400px", maxWidth: "100%", overflowX: "auto", overflowY: "auto" } }}
             meta={{ handleDeleteRow }}
           />
         </Box>

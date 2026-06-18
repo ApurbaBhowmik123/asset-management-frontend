@@ -5,12 +5,9 @@ import {
   Typography,
   Snackbar,
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Paper,
+  Grid,
   TextField,
-  InputLabel,
 } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -23,29 +20,173 @@ import axios from "axios";
 import { CustomTextField } from "../../../utils/CustomTextField";
 import { dateTimeHelper } from "../../../Helper/DateTimeHelper/DateTimeHelper";
 
-const textFieldStyles = {
-  "& .MuiOutlinedInput-root": {
-    "& fieldset": { borderColor: "#D9D9D9", borderRadius: "4px" },
-    "&:hover fieldset": { borderColor: "#D9D9D9" },
-    "&.Mui-focused fieldset": { borderColor: "#D9D9D9" },
-  },
-  "& .MuiInputBase-input": { padding: "8px 12px" },
-  backgroundColor: "#f9fafb",
+const BulkTagForm = ({ product, onSuccess, setSnackbar }) => {
+  const [specFields, setSpecFields] = useState([]);
+  const [tagDataList, setTagDataList] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchCategorySpecs = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(`${baseUrl}/catalog/categories/${product.categoryId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const specFieldsData = res.data.data?.categorySpecFields?.map(csf => csf.specField).filter(Boolean) || [];
+        setSpecFields(specFieldsData);
+      } catch (error) {
+        console.error("Error fetching spec fields", error);
+      }
+    };
+    fetchCategorySpecs();
+
+    const initialList = product.untaggedDetails.map(detail => ({
+      inventoryProductDetailId: detail.id,
+      uuid: detail.uuid,
+      serialNo1: "",
+      sapCode: "",
+      modelName: "",
+      warrantyTill: null,
+      specValues: {}
+    }));
+    setTagDataList(initialList);
+  }, [product]);
+
+  const handleChange = (index, field, value) => {
+    const updated = [...tagDataList];
+    updated[index][field] = value;
+    setTagDataList(updated);
+  };
+
+  const handleSpecChange = (index, specId, value) => {
+    const updated = [...tagDataList];
+    updated[index].specValues = {
+      ...updated[index].specValues,
+      [specId]: value
+    };
+    setTagDataList(updated);
+  };
+
+  const handleSaveAll = async () => {
+    for (let i = 0; i < tagDataList.length; i++) {
+      const item = tagDataList[i];
+      if (!item.serialNo1 || !item.modelName) {
+        setSnackbar({ open: true, message: `Please fill Serial Number and Model Name for Item ${i + 1}`, severity: "error" });
+        return;
+      }
+      for (const spec of specFields) {
+        if (!item.specValues[spec.id]) {
+          setSnackbar({ open: true, message: `Please fill attribute '${spec.name}' for Item ${i + 1}`, severity: "error" });
+          return;
+        }
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      const payloadItems = tagDataList.map(item => ({
+        inventoryProductDetailId: item.inventoryProductDetailId,
+        serialNo1: item.serialNo1,
+        sapCode: item.sapCode,
+        modelName: item.modelName,
+        warrantyTill: item.warrantyTill ? item.warrantyTill.toISOString() : null,
+        specValues: Object.keys(item.specValues).map(id => ({
+          specFieldId: Number(id),
+          value: item.specValues[id]
+        }))
+      }));
+
+      await axios.post(`${baseUrl}/gr/bulk-tag-item`, { items: payloadItems }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setSnackbar({ open: true, message: "All items tagged successfully", severity: "success" });
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      setSnackbar({ open: true, message: error.response?.data?.message || "Failed to tag items", severity: "error" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (specFields.length === 0 && tagDataList.length === 0) return <Typography p={2}>Loading...</Typography>;
+
+  return (
+    <Box sx={{ p: 2, bgcolor: "#f5f5f5", borderRadius: 2, border: "1px solid #ddd", m: 2 }}>
+      <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+        Bulk Tagging: {product.category?.name} ({product.untaggedCount} Items)
+      </Typography>
+
+      {tagDataList.map((item, index) => (
+        <Paper key={item.inventoryProductDetailId} sx={{ p: 2, mb: 2 }}>
+          <Typography variant="body2" fontWeight="bold" color="primary" mb={1}>
+            Item {index + 1} (ID: {item.uuid})
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <CustomTextField
+                label="Model Name *"
+                value={item.modelName}
+                onChange={(e) => handleChange(index, "modelName", e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <CustomTextField
+                label="Serial Number *"
+                value={item.serialNo1}
+                onChange={(e) => handleChange(index, "serialNo1", e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <CustomTextField
+                label="SAP Code (Optional)"
+                value={item.sapCode}
+                onChange={(e) => handleChange(index, "sapCode", e.target.value)}
+                fullWidth
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DatePicker
+                  label="Warranty Till (Optional)"
+                  value={item.warrantyTill}
+                  onChange={(date) => handleChange(index, "warrantyTill", date)}
+                  renderInput={(params) => <TextField {...params} fullWidth size="small" />}
+                />
+              </LocalizationProvider>
+            </Grid>
+            {specFields.map((spec) => (
+              <Grid item xs={12} sm={6} md={3} key={spec.id}>
+                <CustomTextField
+                  label={`${spec.name} *`}
+                  value={item.specValues[spec.id] || ""}
+                  onChange={(e) => handleSpecChange(index, spec.id, e.target.value)}
+                  fullWidth
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Paper>
+      ))}
+
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+        <Button variant="contained" color="primary" onClick={handleSaveAll} disabled={isSaving} sx={{ px: 4 }}>
+          {isSaving ? "Saving..." : "Save All"}
+        </Button>
+      </Box>
+    </Box>
+  );
 };
 
 const ViewGr = () => {
   const [grDetails, setGrDetails] = useState(null);
   const [tableData, setTableData] = useState([]);
+  const [untaggedProducts, setUntaggedProducts] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   
-  // Tag Modal State
-  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [tagData, setTagData] = useState({ warrantyTill: null, serialNo1: "", sapCode: "", modelName: "" });
-  const [specFields, setSpecFields] = useState([]);
-  const [specValues, setSpecValues] = useState({});
-  const [isTagging, setIsTagging] = useState(false);
-
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -56,71 +197,44 @@ const ViewGr = () => {
   const fetchGrDetails = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get(`${baseUrl}/gr/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get(`${baseUrl}/gr/${id}?t=${new Date().getTime()}`, { headers: { Authorization: `Bearer ${token}` } });
       setGrDetails(res.data.data);
       
-      const flattened = [];
+      const taggedItemsList = [];
       res.data.data.inventoryProducts.forEach((ip) => {
         ip.inventoryDetails.forEach((det) => {
-          flattened.push({
-            ...det,
-            grInventoryProduct: ip
-          });
+          if (det.assignedStatus !== "Untagged") {
+            taggedItemsList.push({ ...det, grInventoryProduct: ip });
+          }
         });
       });
-      setTableData(flattened);
+      setTableData(taggedItemsList);
+
+      const untaggedProductsList = res.data.data.inventoryProducts.map(ip => {
+        const untaggedDetails = ip.inventoryDetails.filter(d => d.assignedStatus === "Untagged");
+        return {
+          ...ip,
+          untaggedDetails,
+          untaggedCount: untaggedDetails.length
+        };
+      }).filter(ip => ip.untaggedCount > 0);
+      setUntaggedProducts(untaggedProductsList);
     } catch (error) {
       console.error("error fetching GR details", error);
       setSnackbar({ open: true, message: "Error fetching GR details", severity: "error" });
     }
   };
 
-  const handleOpenTagModal = async (row) => {
-    setSelectedItem(row);
-    setTagData({ warrantyTill: null, serialNo1: "", sapCode: "", modelName: "" });
-    setSpecValues({});
-    
-    // Fetch attributes for the category
-    try {
-      const categoryId = row.grInventoryProduct.categoryId;
-      const token = localStorage.getItem("token");
-      const res = await axios.get(`${baseUrl}/catalog/categories/${categoryId}`, { headers: { Authorization: `Bearer ${token}` } });
-      setSpecFields(res.data.data?.categorySpecFields || []);
-    } catch (error) {
-      console.error("Error fetching spec fields", error);
-    }
-    
-    setIsTagModalOpen(true);
-  };
-
-  const handleTagSubmit = async () => {
-    setIsTagging(true);
-    try {
-      const token = localStorage.getItem("token");
-      const payload = {
-        inventoryProductDetailId: selectedItem.id,
-        serialNo1: tagData.serialNo1,
-        sapCode: tagData.sapCode,
-        modelName: tagData.modelName,
-        warrantyTill: tagData.warrantyTill ? tagData.warrantyTill.toISOString() : null,
-        specValues: Object.keys(specValues).map(id => ({ specFieldId: Number(id), value: specValues[id] }))
-      };
-      
-      await axios.post(`${baseUrl}/gr/tag-item`, payload, { headers: { Authorization: `Bearer ${token}` } });
-      
-      setSnackbar({ open: true, message: "Item tagged successfully", severity: "success" });
-      setIsTagModalOpen(false);
-      // Let the modal close immediately, then fetch updates
-      setTimeout(() => fetchGrDetails(), 100);
-    } catch (error) {
-      setSnackbar({ open: true, message: error.response?.data?.message || "Failed to tag item", severity: "error" });
-    } finally {
-      setIsTagging(false);
-    }
-  };
-
   const columnHelper = createMRTColumnHelper();
-  const columns = [
+  
+  const untaggedColumns = [
+    columnHelper.accessor("category.name", { header: "Asset Reference", size: 150 }),
+    columnHelper.accessor("brand.name", { header: "Brand", size: 150 }),
+    columnHelper.accessor("quantity", { header: "Total Quantity", size: 120 }),
+    columnHelper.accessor("untaggedCount", { header: "Untagged Quantity", size: 120 })
+  ];
+
+  const taggedColumns = [
     columnHelper.accessor("grInventoryProduct.category.name", { header: "Asset Reference", size: 150 }),
     columnHelper.accessor("grInventoryProduct.brand.name", { header: "Brand", size: 100 }),
     columnHelper.accessor("modelName", { 
@@ -141,30 +255,22 @@ const ViewGr = () => {
     columnHelper.accessor("assignedStatus", { 
       header: "Status", 
       size: 100,
-      Cell: ({ cell }) => {
-        const val = cell.getValue();
-        return (
-          <span style={{ color: val === "Untagged" ? "red" : "green", fontWeight: "bold" }}>
-            {val}
-          </span>
-        );
-      }
+      Cell: ({ cell }) => <span style={{ color: "green", fontWeight: "bold" }}>{cell.getValue()}</span>
     }),
-    columnHelper.display({
-      id: "actions",
-      header: "Action",
+    columnHelper.accessor("qrCode.qrCodeUrl", {
+      header: "QR Code",
       size: 100,
       Cell: ({ row }) => {
-        if (row.original.assignedStatus === "Untagged") {
-          return (
-            <Button variant="contained" size="small" onClick={() => handleOpenTagModal(row.original)} sx={{ bgcolor: "#DB3027" }}>
-              Tag Item
-            </Button>
-          );
-        }
-        return <Typography variant="caption" color="textSecondary">Tagged</Typography>;
+        const url = row.original.qrCode?.qrCodeUrl;
+        if (!url) return "-";
+        const cleanUrl = url.startsWith("http") ? url : `${baseUrl.replace('/api/v1', '')}${url}`;
+        return (
+          <a href={cleanUrl} target="_blank" rel="noreferrer" style={{ color: "#1976d2", textDecoration: "none", fontWeight: "bold" }}>
+            View QR
+          </a>
+        );
       }
-    }),
+    })
   ];
 
   if (!grDetails) return <Typography p={3}>Loading...</Typography>;
@@ -197,82 +303,50 @@ const ViewGr = () => {
       </Box>
 
       {/* Untagged Items */}
-      {tableData.filter(d => d.assignedStatus === "Untagged").length > 0 && (
-        <Box sx={{ bgcolor: "white", p: 3, borderRadius: 2, mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight="bold" mb={2}>Untagged Items</Typography>
-          <MaterialReactTable 
-            columns={columns} 
-            data={tableData.filter(d => d.assignedStatus === "Untagged")} 
-            muiTableContainerProps={{ sx: { overflowX: "auto" } }}
-          />
-        </Box>
-      )}
-
-      {/* Tagged / InStock Items */}
-      {tableData.filter(d => d.assignedStatus !== "Untagged").length > 0 && (
-        <Box sx={{ bgcolor: "white", p: 3, borderRadius: 2, mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight="bold" mb={2}>Tagged / In-Stock Items</Typography>
-          <MaterialReactTable 
-            columns={columns} 
-            data={tableData.filter(d => d.assignedStatus !== "Untagged")} 
-            muiTableContainerProps={{ sx: { overflowX: "auto" } }}
-          />
-        </Box>
-      )}
-
-      {/* Tag Modal */}
-      <Dialog open={isTagModalOpen} onClose={() => setIsTagModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: "bold", borderBottom: "1px solid #eee" }}>Tag Item</DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 2 }}>
-            <Box>
-              <InputLabel sx={{ color: "black", mb: 0.5 }}>Model Name</InputLabel>
-              <CustomTextField fullWidth size="small" value={tagData.modelName} onChange={e => setTagData({...tagData, modelName: e.target.value})} sx={textFieldStyles} />
-            </Box>
-            <Box>
-              <InputLabel sx={{ color: "black", mb: 0.5 }}>Serial Number</InputLabel>
-              <CustomTextField fullWidth size="small" value={tagData.serialNo1} onChange={e => setTagData({...tagData, serialNo1: e.target.value})} sx={textFieldStyles} />
-            </Box>
-            <Box>
-              <InputLabel sx={{ color: "black", mb: 0.5 }}>Tag No / SAP Code</InputLabel>
-              <CustomTextField fullWidth size="small" value={tagData.sapCode} onChange={e => setTagData({...tagData, sapCode: e.target.value})} sx={textFieldStyles} />
-            </Box>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Box>
-                <InputLabel sx={{ color: "black", mb: 0.5 }}>Warranty Expiry</InputLabel>
-                <DatePicker value={tagData.warrantyTill} onChange={date => setTagData({...tagData, warrantyTill: date})} renderInput={(params) => <TextField {...params} fullWidth size="small" sx={textFieldStyles} />} />
-              </Box>
-            </LocalizationProvider>
-
-            {specFields.length > 0 && (
-              <Box mt={2}>
-                <Typography variant="subtitle2" fontWeight="bold" mb={1} color="primary">Asset Attributes</Typography>
-                <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
-                  {specFields.map((f) => (
-                    <Box key={f.specField.id}>
-                      <InputLabel sx={{ color: "black", mb: 0.5, fontSize: "13px" }}>{f.specField.name} {f.specField.unit ? `(${f.specField.unit})` : ""}</InputLabel>
-                      <CustomTextField 
-                        fullWidth size="small" 
-                        value={specValues[f.specField.id] || ""} 
-                        onChange={e => setSpecValues({...specValues, [f.specField.id]: e.target.value})} 
-                        sx={textFieldStyles} 
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
+      {untaggedProducts.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" fontWeight="bold" mb={2}>Untagged Items (Requires Tagging)</Typography>
+          <MaterialReactTable
+            columns={untaggedColumns}
+            data={untaggedProducts}
+            enablePagination={false}
+            enableGlobalFilter={false}
+            enableColumnActions={false}
+            renderDetailPanel={({ row }) => (
+              <BulkTagForm 
+                product={row.original} 
+                onSuccess={fetchGrDetails} 
+                setSnackbar={setSnackbar}
+              />
             )}
-          </Box>
-        </DialogContent>
-        <DialogActions sx={{ borderTop: "1px solid #eee", p: 2 }}>
-          <Button onClick={() => setIsTagModalOpen(false)} color="inherit" sx={{ textTransform: "none" }}>Cancel</Button>
-          <Button onClick={handleTagSubmit} variant="contained" disabled={isTagging} sx={{ bgcolor: "#DB3027", textTransform: "none" }}>
-            {isTagging ? "Tagging..." : "Tag"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            muiTablePaperProps={{ elevation: 0, sx: { border: "1px solid #e0e0e0", borderRadius: 2 } }}
+            muiTableHeadRowProps={{ sx: { backgroundColor: "#FFF4E5" } }}
+            muiTableBodyCellProps={{ sx: { fontSize: "13px" } }}
+          />
+        </Box>
+      )}
 
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+      {/* Tagged Items */}
+      {tableData.length > 0 && (
+        <Box>
+          <Typography variant="h6" fontWeight="bold" mb={2}>Tagged Items</Typography>
+          <MaterialReactTable
+            columns={taggedColumns}
+            data={tableData}
+            enablePagination={true}
+            muiTablePaperProps={{ elevation: 0, sx: { border: "1px solid #e0e0e0", borderRadius: 2 } }}
+            muiTableHeadRowProps={{ sx: { backgroundColor: "#E8F5E9" } }}
+            muiTableBodyCellProps={{ sx: { fontSize: "13px" } }}
+          />
+        </Box>
+      )}
+
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={4000} 
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
         <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
           {snackbar.message}
         </Alert>

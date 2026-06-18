@@ -11,6 +11,7 @@ import {
     Chip,
     Snackbar,
     Alert,
+    Grid,
 } from "@mui/material";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -53,6 +54,117 @@ const AssignAsset = ({ onBack }) => {
         remark: "", // Added remark field for place selection
     });
 
+
+    const [masterMatrix, setMasterMatrix] = useState([]);
+    const [availableCategories, setAvailableCategories] = useState([]);
+    const [availableBrands, setAvailableBrands] = useState([]);
+    const [availableProducts, setAvailableProducts] = useState([]);
+    const [availableModels, setAvailableModels] = useState([]);
+    const [specFields, setSpecFields] = useState([]);
+    const [specValueOptions, setSpecValueOptions] = useState({});
+
+    const [advFilters, setAdvFilters] = useState({ brandId: "", categoryId: "",
+        modelName: "", productId: "" });
+    const [specsFilter, setSpecsFilter] = useState({});
+    const [appliedFilters, setAppliedFilters] = useState({ brandId: "", categoryId: "", productId: "", specs: {} });
+
+    const fetchMasterMatrix = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const res = await axios.get(`${baseUrl}/asset-mng/asset-helper/dynamic-filters-master-data`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.data.status) {
+                setMasterMatrix(res.data.data);
+            }
+        } catch (err) {
+            console.error("Failed to load master matrix", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchMasterMatrix();
+    }, []);
+
+    useEffect(() => {
+        if (!masterMatrix || masterMatrix.length === 0) return;
+
+        let filtered = masterMatrix;
+
+        if (advFilters.categoryId) filtered = filtered.filter(item => item.categoryId == advFilters.categoryId);
+        if (advFilters.brandId) filtered = filtered.filter(item => item.brandId == advFilters.brandId);
+        if (advFilters.productId) filtered = filtered.filter(item => item.productId == advFilters.productId);
+        if (advFilters.modelName) filtered = filtered.filter(item => item.modelName == advFilters.modelName);
+        Object.entries(specsFilter).forEach(([specId, specVal]) => {
+            if (specVal) {
+                filtered = filtered.filter(item => item.specs[specId] && item.specs[specId].includes(specVal));
+            }
+        });
+
+        const cats = new Map();
+        masterMatrix.forEach(item => {
+            if (item.categoryId && item.categoryName) cats.set(item.categoryId, item.categoryName);
+        });
+        setAvailableCategories(Array.from(cats.entries()).map(([id, name]) => ({ id, name })));
+
+        let baseForBrands = masterMatrix;
+        if (advFilters.categoryId) baseForBrands = baseForBrands.filter(item => item.categoryId == advFilters.categoryId);
+        const brds = new Map();
+        baseForBrands.forEach(item => {
+            if (item.brandId && item.brandName) brds.set(item.brandId, item.brandName);
+        });
+        setAvailableBrands(Array.from(brds.entries()).map(([id, name]) => ({ id, name })));
+
+        let baseForProds = baseForBrands;
+        if (advFilters.brandId) baseForProds = baseForProds.filter(item => item.brandId == advFilters.brandId);
+        const prods = new Map();
+        baseForProds.forEach(item => {
+            if (item.productId && item.productName) prods.set(item.productId, item.productName);
+        });
+        setAvailableProducts(Array.from(prods.entries()).map(([id, name]) => ({ id, name })));
+
+        let baseForModels = baseForProds;
+        if (advFilters.productId) baseForModels = baseForModels.filter(item => item.productId == advFilters.productId);
+        const mods = new Set();
+        baseForModels.forEach(item => {
+            if (item.modelName && item.modelName !== "N/A") mods.add(item.modelName);
+        });
+        setAvailableModels(Array.from(mods));
+
+        const specOpts = {};
+        filtered.forEach(item => {
+            Object.entries(item.specs).forEach(([sfId, val]) => {
+                if (!specOpts[sfId]) specOpts[sfId] = new Set();
+                specOpts[sfId].add(val);
+            });
+        });
+        const finalSpecOpts = {};
+        Object.keys(specOpts).forEach(k => finalSpecOpts[k] = Array.from(specOpts[k]));
+        setSpecValueOptions(finalSpecOpts);
+
+    }, [masterMatrix, advFilters, specsFilter]);
+    useEffect(() => {
+        if (advFilters.categoryId) {
+            const fetchSpecs = async () => {
+                const token = localStorage.getItem("token");
+                try {
+                    const res = await axios.get(`${baseUrl}/catalog/categories/${advFilters.categoryId}`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    if (res.data.status && res.data.data?.categorySpecFields) {
+                        setSpecFields(res.data.data.categorySpecFields.map(cf => cf.specField));
+                    }
+
+                } catch (e) { }
+            };
+            fetchSpecs();
+        } else {
+            setSpecFields([]);
+            setSpecsFilter({});
+            
+        }
+    }, [advFilters.categoryId]);
+
     const [users, setUsers] = useState([]);
     const [units, setUnits] = useState([]);
     const [locations, setLocations] = useState([]);
@@ -72,7 +184,7 @@ const AssignAsset = ({ onBack }) => {
         severity: "success",
     });
     const [unitLocations, setUnitLocations] = useState([]);
-    
+
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -152,7 +264,10 @@ const AssignAsset = ({ onBack }) => {
                     sortOrder = sorting[0].desc ? "desc" : "asc";
                 }
 
-                const url = `${baseUrl}/asset-mng/asset-helper/asset-assignable-products?page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}&limit=${limit}&search=${searchTerm}`;
+
+                const specQuery = Object.keys(appliedFilters.specs).length > 0 ? `&specs=${encodeURIComponent(JSON.stringify(appliedFilters.specs))}` : "";
+                const url = `${baseUrl}/asset-mng/asset-helper/asset-assignable-products?page=${page}&sortBy=${sortBy}&sortOrder=${sortOrder}&limit=${limit}&search=${searchTerm}&brandId=${appliedFilters.brandId}&categoryId=${appliedFilters.categoryId}&productId=${appliedFilters.productId}&modelName=${appliedFilters.modelName}${specQuery}`;
+
 
                 const response = await axios.get(url, {
                     headers: {
@@ -163,10 +278,10 @@ const AssignAsset = ({ onBack }) => {
                 if (response.data.status) {
                     const formattedData = response.data.data.data.map(item => ({
                         id: item.uuid,
-                        productName: item.grInventoryProduct.product.name,
-                        brand: "N/A", // Not available in the response
-                        category: item.grInventoryProduct.product.category.name,
-                        // subcategory: item.grInventoryProduct.product.subcategory.name,
+                        productName: item.grInventoryProduct?.product?.name || item.grInventoryProduct?.category?.name || "Unknown Product",
+                        brand: item.grInventoryProduct?.product?.brand?.name || item.grInventoryProduct?.brand?.name || "Unknown Brand",
+                        category: item.grInventoryProduct?.product?.category?.name || item.grInventoryProduct?.category?.name || "Unknown Category",
+                        attributes: item.specValues?.map(sv => `${sv.specField?.name}: ${sv.value}`).join(' | ') || "N/A",
                         status: item.assignedStatus,
                         uuid: item.uuid,
                         inventoryProductDetailId: item.id,
@@ -185,7 +300,7 @@ const AssignAsset = ({ onBack }) => {
             }
         };
         fetchProducts();
-    }, [pagination.pageIndex, pagination.pageSize, searchTerm, sorting]);
+    }, [pagination.pageIndex, pagination.pageSize, searchTerm, sorting, appliedFilters]);
 
     const handleUserSelection = (user) => {
         setFormData({
@@ -384,9 +499,9 @@ const AssignAsset = ({ onBack }) => {
                 if (productsResponse.data.status) {
                     const formattedData = productsResponse.data.data.data.map(item => ({
                         id: item.uuid,
-                        productName: item.grInventoryProduct.product.name,
-                        brand: "N/A",
-                        category: item.grInventoryProduct.product.category.name,
+                        productName: item.grInventoryProduct?.product?.name || item.grInventoryProduct?.category?.name || "Unknown Product",
+                        brand: item.grInventoryProduct?.product?.brand?.name || item.grInventoryProduct?.brand?.name || "Unknown Brand",
+                        category: item.grInventoryProduct?.product?.category?.name || item.grInventoryProduct?.category?.name || "Unknown Category",
                         // subcategory: item.grInventoryProduct.product.subcategory.name,
                         status: item.assignedStatus,
                         uuid: item.uuid,
@@ -444,9 +559,26 @@ const AssignAsset = ({ onBack }) => {
             header: 'Asset ID',
             size: 200,
         }),
+        columnHelper.accessor('attributes', {
+            header: 'Attributes',
+            size: 250,
+            Cell: ({ cell }) => (
+                <span style={{ whiteSpace: 'normal', display: 'block', minWidth: '150px' }}>
+                    {cell.getValue() || "N/A"}
+                </span>
+            ),
+        }),
         columnHelper.accessor('productName', {
             header: 'Product Name',
             size: 200,
+        }),
+        columnHelper.accessor('brand', {
+            header: 'Brand',
+            size: 150,
+        }),
+        columnHelper.accessor('brand', {
+            header: 'Brand',
+            size: 150,
         }),
         // columnHelper.accessor('subcategory', {
         //     header: 'Subcategory',
@@ -513,6 +645,15 @@ const AssignAsset = ({ onBack }) => {
         columnHelper.accessor('category', {
             header: 'Category',
             size: 120,
+        }),
+        columnHelper.accessor('attributes', {
+            header: 'Attributes',
+            size: 250,
+            Cell: ({ cell }) => (
+                <span style={{ whiteSpace: 'normal', display: 'block', minWidth: '150px' }}>
+                    {cell.getValue() || "N/A"}
+                </span>
+            ),
         }),
         // columnHelper.accessor('subcategory', {
         //     header: 'Subcategory',
@@ -599,8 +740,11 @@ const AssignAsset = ({ onBack }) => {
         muiTableContainerProps: {
             sx: {
                 width: '100%',
-                overflowX: 'hidden',
+                overflowX: 'auto',
             },
+        },
+        muiTablePaperProps: {
+            sx: { width: '100%', overflowX: 'auto' }
         },
         renderTopToolbarCustomActions: ({ table }) => (
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -682,8 +826,11 @@ const AssignAsset = ({ onBack }) => {
         muiTableContainerProps: {
             sx: {
                 width: '100%',
-                overflowX: 'hidden',
+                overflowX: 'auto',
             },
+        },
+        muiTablePaperProps: {
+            sx: { width: '100%', overflowX: 'auto' }
         },
     });
 
@@ -844,7 +991,7 @@ const AssignAsset = ({ onBack }) => {
                                         <CustomTextField
                                             name={f}
                                             value={formData[f]}
-                                            noBackground
+                                            
                                             InputProps={{
                                                 readOnly: true,
                                                 style: {
@@ -887,7 +1034,7 @@ const AssignAsset = ({ onBack }) => {
                                         <CustomTextField
                                             name={f}
                                             value={formData[f]}
-                                            noBackground
+                                            
                                             InputProps={{
                                                 readOnly: true,
                                                 style: {
@@ -927,11 +1074,11 @@ const AssignAsset = ({ onBack }) => {
                                 name="startDate"
                                 value={formData.startDate}
                                 onChange={handleChange}
-                               
+
                             />
                         </div>
                     </div>
-                    
+
                     {/* End Date - Only show for Permanent allocation */}
                     {!isTemporaryAllocation && (
                         <div style={columnStyle}>
@@ -943,12 +1090,12 @@ const AssignAsset = ({ onBack }) => {
                                     name="endDate"
                                     value={formData.endDate}
                                     onChange={handleChange}
-                                   
+
                                 />
                             </div>
                         </div>
                     )}
-                    
+
                     {/* Requester */}
                     <div style={columnStyle}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -963,7 +1110,7 @@ const AssignAsset = ({ onBack }) => {
                             </CustomTextField>
                         </div>
                     </div>
-                    
+
                     {/* Issuer */}
                     <div style={columnStyle}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -978,9 +1125,9 @@ const AssignAsset = ({ onBack }) => {
                             </CustomTextField>
                         </div>
                     </div>
-                    
+
                 </div>
-                
+
                 {/* Approver Row */}
                 <div style={rowStyle} className="line">
                     <div style={columnStyle}>
@@ -1001,10 +1148,103 @@ const AssignAsset = ({ onBack }) => {
                     <div style={columnStyle}></div>
                 </div>
 
-                {/* Search Product Section */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, marginBottom: 12 }}>
-                    <Typography fontWeight={600}>Search Product</Typography>
+
+                {/* Advanced Filters */}
+                <div style={{ marginTop: 24, marginBottom: 16 }}>
+                    <Typography fontWeight={600} gutterBottom>Advanced Filters</Typography>
+                    <Paper elevation={0} sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: 2 }}>
+                        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                            <CustomTextField
+                                select
+                                label="Category (Product Name)"
+                                value={advFilters.categoryId}
+                                onChange={(e) => setAdvFilters(s => ({ ...s, categoryId: e.target.value }))}
+                                sx={{ minWidth: 200, maxWidth: 250, flex: "1 1 200px" }}
+                            >
+                                <MenuItem value="">All Categories</MenuItem>
+                                {availableCategories.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+                            </CustomTextField>
+                            <CustomTextField
+                                select
+                                label="Brand"
+                                value={advFilters.brandId}
+                                onChange={(e) => setAdvFilters(s => ({ ...s, brandId: e.target.value }))}
+                                sx={{ minWidth: 200, maxWidth: 250, flex: "1 1 200px" }}
+                            >
+                                <MenuItem value="">All Brands</MenuItem>
+                                {availableBrands.map(b => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+                            </CustomTextField>
+                            <CustomTextField
+                                select
+                                label="Product"
+                                value={advFilters.productId}
+                                onChange={(e) => setAdvFilters(s => ({ ...s, productId: e.target.value }))}
+                                sx={{ minWidth: 200, maxWidth: 250, flex: "1 1 200px" }}
+                            >
+                                <MenuItem value="">All Products</MenuItem>
+                                {availableProducts.map(p => <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>)}
+                            </CustomTextField>
+                            <CustomTextField
+                                select
+                                label="Model Name"
+                                value={advFilters.modelName}
+                                onChange={(e) => setAdvFilters(s => ({ ...s, modelName: e.target.value }))}
+                                sx={{ minWidth: 200, maxWidth: 250, flex: "1 1 200px" }}
+                            >
+                                <MenuItem value="">All Models</MenuItem>
+                                {availableModels.map((m, i) => <MenuItem key={i} value={m}>{m}</MenuItem>)}
+                            </CustomTextField>
+                        </div>
+
+                        {specFields.length > 0 && (
+                            <div style={{ marginTop: 16 }}>
+                                <Typography variant="caption" color="textSecondary" gutterBottom>Attributes</Typography>
+                                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                                    {specFields.map(sf => (
+                                        <CustomTextField
+                                            key={sf.id}
+                                            select
+                                            label={sf.name}
+                                            value={specsFilter[sf.id] || ""}
+                                            onChange={(e) => setSpecsFilter(s => ({ ...s, [sf.id]: e.target.value }))}
+                                            sx={{ minWidth: 150, maxWidth: 200, flex: "1 1 150px" }}
+                                        >
+                                            <MenuItem value="">Any {sf.name}</MenuItem>
+                                            {(specValueOptions[sf.id] || []).map((opt, i) => (
+                                                <MenuItem key={i} value={opt}>{opt}</MenuItem>
+                                            ))}
+                                        </CustomTextField>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="contained"
+                                className="Global-Button"
+                                onClick={() => setAppliedFilters({ ...advFilters, specs: specsFilter })}
+                            >
+                                Apply Filters
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                sx={{ ml: 1 }}
+                                onClick={() => {
+                                    setAdvFilters({ brandId: "", categoryId: "", productId: "" });
+                                    setSpecsFilter({});
+                                    setAppliedFilters({ brandId: "", categoryId: "", productId: "", specs: {} });
+                                }}
+                            >
+                                Clear
+                            </Button>
+                        </Box>
+                    </Paper>
                 </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, marginBottom: 12 }}>
+                    <Typography fontWeight={600}>Available Products</Typography>
+                </div>
+
 
                 <MaterialReactTable table={table} />
 

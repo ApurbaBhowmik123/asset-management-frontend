@@ -92,7 +92,7 @@ const ListGr = () => {
       size: 150,
       Cell: ({ row }) => (
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-          {taggedFilter === "false" && (
+          {/* {taggedFilter === "false" && (
             <Button
               variant="contained"
               color="success"
@@ -115,7 +115,7 @@ const ListGr = () => {
             >
               Tag
             </Button>
-          )}
+          )} */}
           <IconButton
             onClick={() => handleGotoQRList(row?.original?.uuid)}
             color="primary"

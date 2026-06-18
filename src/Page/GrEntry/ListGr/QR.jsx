@@ -97,10 +97,13 @@ const QR = () => {
         data.data.inventoryProducts.forEach((inventoryProduct) => {
           if (inventoryProduct.inventoryDetails) {
             inventoryProduct.inventoryDetails.forEach((detail) => {
+              const rawUrl = detail.qrCode?.qrCodeUrl;
+              const fullUrl = rawUrl ? (rawUrl.startsWith("http") ? rawUrl : `${baseUrl.replace('/api/v1', '').replace('/api', '')}${rawUrl}`) : null;
               mappedData.push({
                 assetId: detail.uuid,
                 serialNo: detail.serialNo1 || detail.serialNo2 || "N/A",
                 product: inventoryProduct.category?.name || "N/A",
+                qrCodeUrl: fullUrl,
               });
             });
           }
@@ -378,13 +381,17 @@ const QR = () => {
     showQrDetails.inventoryProducts.forEach((inventoryProduct) => {
       if (inventoryProduct.inventoryDetails) {
         inventoryProduct.inventoryDetails.forEach((detail) => {
-          qrItems.push({
-            productName: inventoryProduct.product?.name || "Unknown Product",
-            serialNo:
-              detail.serialNo1 || detail.serialNo2 || detail.uuid.slice(-12),
-            uuid: detail.uuid,
-            qrCodeUrl: detail.qrCode?.qrCodeUrl,
-          });
+          if (detail.qrCode) {
+            const rawUrl = detail.qrCode?.qrCodeUrl;
+            const fullUrl = rawUrl ? (rawUrl.startsWith("http") ? rawUrl : `${baseUrl.replace('/api/v1', '').replace('/api', '')}${rawUrl}`) : null;
+            qrItems.push({
+              assetId: detail.uuid,
+              productName: inventoryProduct.product?.name || "Unknown Product",
+              serialNo: detail.serialNo1 || detail.serialNo2 || detail.uuid.slice(-12),
+              uuid: detail.uuid,
+              qrCodeUrl: fullUrl,
+            });
+          }
         });
       }
     });
