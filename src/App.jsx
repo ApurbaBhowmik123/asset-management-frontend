@@ -30,6 +30,9 @@ import ActiveEmp from "./Page/Employee/ActiveEmp";
 import AssignAsset from "./Page/AssetManagement/AssignAsset/AssignAsset";
 import UnassignAsset from "./Page/AssetManagement/UnassignAsset/UnassignAsset";
 import ListHandHover from "./Page/AssetManagement/Handover/ListHandhover";
+import ReturnHandoverList from "./Page/AssetManagement/ReturnHandover/ReturnHandoverList";
+import ReturnHandover from "./Page/AssetManagement/ReturnHandover/ReturnHandover";
+import UnassignList from "./Page/AssetManagement/UnassignList/UnassignList";
 import Handover from "./Page/AssetManagement/Handover/Handover";
 import AssignList from "./Page/AssetManagement/AssignList/AssignList";
 import AssignDetails from "./Page/AssetManagement/AssignList/AssignDetails";
@@ -58,6 +61,7 @@ import AssignedStock from "./Page/AssetStatus/AssignedStock/AssignedStock";
 import BlockedStock from "./Page/AssetStatus/BlockedStock/BlockedStock";
 import AwaitingStock from "./Page/AssetStatus/AwaitingStock/AwaitingStock";
 import EWaste from "./Page/AssetStatus/EWaste/EWaste";
+import ScrapList from "./Page/AssetStatus/ScrapList/ScrapList";
 import BulkUpload from "./Page/AssetStatus/BulkUpload/BulkUpload";
 // Service
 import UpComingServiceProcessList from "./Page/AssetService/UpComingServiceProcess/UpComingServiceProcessList";
@@ -161,6 +165,9 @@ const App = () => {
               <Route path="/assetmanagement/assigndetails/:id" element={<AssignDetails />} />
               <Route path="/assetmanagement/unassignasset" element={<UnassignAsset />} />
               <Route path="/assetmanagement/listHandhover" element={<ListHandHover />} />
+                <Route path="/assetmanagement/return-handover" element={<ReturnHandoverList />} />
+                <Route path="/assetmanagement/return-handover/:id" element={<ReturnHandover />} />
+                <Route path="/assetmanagement/unassign-list" element={<UnassignList />} />
               <Route path="/assetmanagement/handover/:id" element={<Handover />} />
               {/* Stock */}
               <Route path="/assetstatus/all-asset" element={<AllAsset />} />
@@ -169,6 +176,7 @@ const App = () => {
               <Route path="/assetstatus/blocked-stock" element={<BlockedStock />} />
               <Route path="/assetstatus/awaiting-stock" element={<AwaitingStock />} />
               <Route path="/assetstatus/write-off" element={<EWaste />} />
+              <Route path="/assetstatus/scrap-list" element={<ScrapList />} />
               <Route path="/assetstatus/bulk-upload" element={<BulkUpload />} />
 
               {/* Reports */}

@@ -472,7 +472,7 @@ const QR = () => {
                         // size={{ md: 3 }} 
                         >
                           <a
-                            href={`http://143.244.156.175/product-detail/${item.uuid}`}
+                            href={`${window.location.origin}/product-detail/${item.uuid}`}
                             target="_blank"
                             rel="noopener noreferrer"
                           >

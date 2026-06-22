@@ -28,7 +28,7 @@ const csvConfig = mkConfig({
     filename: 'assignments_export_' + new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
 });
 
-const AssignList = () => {
+const UnassignList = () => {
     const [data, setData] = useState([]);
     const [allData, setAllData] = useState([]); // Store all data for client-side filtering
     const [isLoading, setIsLoading] = useState(true);
@@ -39,13 +39,16 @@ const AssignList = () => {
         pageSize: 5,
     });
     const [rowCount, setRowCount] = useState(0);
-    const [sorting, setSorting] = useState([]);
+    const [sorting, setSorting] = useState([{ id: 'name', desc: true }]);
+    const navigate = useNavigate();
+
+    const profileStr = localStorage.getItem("profile");
+    const userData = profileStr ? JSON.parse(profileStr)?.data : null;
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: "",
         severity: "success",
     });
-    const navigate = useNavigate();
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -57,7 +60,7 @@ const AssignList = () => {
             const search = globalFilter || '';
 
             const res = await fetch(
-                `${baseUrl}/asset-mng/asset/list?page=${pageIndex + 1}&limit=${pageSize}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${search}`, //&search=${search}
+                `${baseUrl}/asset-mng/asset/list?page=${pageIndex + 1}&limit=${pageSize}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${search}&status=Returned`, //&search=${search}
                 {
                     method: 'GET',
                     headers: {
@@ -172,34 +175,7 @@ const AssignList = () => {
         //     },
         // }),
 
-        columnHelper.accessor('endDate', {
-            header: 'Allocation Expired',
-            size: 160,
-            Cell: ({ cell }) => {
-                const endDate = cell.getValue();
-                const today = new Date();
-
-                let color = 'green';
-                if (endDate) {
-                    const end = new Date(endDate);
-                    if (end < today) {
-                        color = 'red';
-                    }
-                }
-
-                return (
-                    <Box
-                        sx={{
-                            width: 16,
-                            height: 16,
-                            borderRadius: '50%',
-                            backgroundColor: color,
-                            mx: 'auto',
-                        }}
-                    />
-                );
-            },
-        }),
+        
 
         columnHelper.display({
             id: 'actions',
@@ -207,37 +183,39 @@ const AssignList = () => {
             size: 100,
             Cell: ({ row }) => (
                 <Box>
-                    <IconButton
-                        size="small"
-                        color="primary"
-                        onClick={async () => {
-                            try {
-                                const token = localStorage.getItem('token');
-                                const response = await fetch(
-                                    `${baseUrl}/asset-mng/asset/details/${row.original.assignedId}`,
-                                    {
-                                        method: 'GET',
-                                        headers: {
-                                            'Authorization': `Bearer ${token}`,
-                                            'Content-Type': 'application/json'
+                    {(!row.original.approver?.id || (userData && String(row.original.approver?.id) === String(userData.id))) && (
+                        <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={async () => {
+                                try {
+                                    const token = localStorage.getItem('token');
+                                    const response = await fetch(
+                                        `${baseUrl}/asset-mng/asset/details/${row.original.assignedId}`,
+                                        {
+                                            method: 'GET',
+                                            headers: {
+                                                'Authorization': `Bearer ${token}`,
+                                                'Content-Type': 'application/json'
+                                            }
                                         }
+                                    );
+                                    const json = await response.json();
+                                    if (json.status) {
+                                        navigate(`/assetmanagement/assigndetails/${row.original.assignedId}`, {
+                                            state: { assignment: json.data.data }
+                                        });
+                                    } else {
+                                        console.error('Failed to fetch assignment details');
                                     }
-                                );
-                                const json = await response.json();
-                                if (json.status) {
-                                    navigate(`/assetmanagement/assigndetails/${row.original.assignedId}`, {
-                                        state: { assignment: json.data.data }
-                                    });
-                                } else {
-                                    console.error('Failed to fetch assignment details');
+                                } catch (error) {
+                                    console.error('Error fetching assignment details:', error);
                                 }
-                            } catch (error) {
-                                console.error('Error fetching assignment details:', error);
-                            }
-                        }}
-                    >
-                        <img src={handIcon} style={{ height: 20, width: 20 }} alt="Handover" />
-                    </IconButton>
+                            }}
+                        >
+                            <img src={handIcon} style={{ height: 20, width: 20 }} alt="Handover" />
+                        </IconButton>
+                    )}
                 </Box>
             ),
         }),
@@ -511,4 +489,4 @@ const AssignList = () => {
     );
 };
 
-export default AssignList;
+export default UnassignList;

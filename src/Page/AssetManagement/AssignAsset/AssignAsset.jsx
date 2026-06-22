@@ -12,6 +12,7 @@ import {
     Snackbar,
     Alert,
     Grid,
+    CircularProgress,
 } from "@mui/material";
 import { ArrowLeft } from "lucide-react";
 import {
@@ -54,6 +55,7 @@ const AssignAsset = ({ onBack }) => {
         remark: "", // Added remark field for place selection
     });
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [masterMatrix, setMasterMatrix] = useState([]);
     const [availableCategories, setAvailableCategories] = useState([]);
@@ -427,7 +429,17 @@ const AssignAsset = ({ onBack }) => {
             return;
         }
 
+        if (!formData.startDate) {
+            setSnackbar({
+                open: true,
+                message: "Start Date is required",
+                severity: "warning",
+            });
+            return;
+        }
+
         try {
+            setIsSubmitting(true);
             const token = localStorage.getItem("token");
             const requesterUser = users.find(user => user.name === formData.requester);
             const issuerUser = users.find(user => user.name === formData.issuer);
@@ -520,6 +532,8 @@ const AssignAsset = ({ onBack }) => {
                 message: error.response?.data?.message || "Failed to assign assets",
                 severity: "error",
             });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -743,9 +757,6 @@ const AssignAsset = ({ onBack }) => {
                 overflowX: 'auto',
             },
         },
-        muiTablePaperProps: {
-            sx: { width: '100%', overflowX: 'auto' }
-        },
         renderTopToolbarCustomActions: ({ table }) => (
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Button
@@ -828,9 +839,6 @@ const AssignAsset = ({ onBack }) => {
                 width: '100%',
                 overflowX: 'auto',
             },
-        },
-        muiTablePaperProps: {
-            sx: { width: '100%', overflowX: 'auto' }
         },
     });
 
@@ -1263,8 +1271,16 @@ const AssignAsset = ({ onBack }) => {
                         className="Global-Button2"
                         sx={{ px: 4, py: 1 }}
                         onClick={handleAssignSubmit}
+                        disabled={isSubmitting}
                     >
-                        Assign Submit
+                        {isSubmitting ? (
+                            <>
+                                <CircularProgress size={20} sx={{ mr: 1 }} color="inherit" />
+                                Assigning...
+                            </>
+                        ) : (
+                            "Assign Submit"
+                        )}
                     </Button>
                 </Box>
             </Paper>

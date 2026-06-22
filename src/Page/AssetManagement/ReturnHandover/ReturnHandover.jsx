@@ -9,7 +9,10 @@ import {
   IconButton,
   CircularProgress,
   Alert,
-  Snackbar
+  Snackbar,
+  Select,
+  MenuItem,
+  TextField
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -31,7 +34,7 @@ import { baseUrl } from '../../Api';
 
 const csvConfig = mkConfig({ useKeysAsHeaders: true });
 
-const Handover = () => {
+const ReturnHandover = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -44,6 +47,7 @@ const Handover = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [assetStatuses, setAssetStatuses] = useState({});
 
   const profileStr = localStorage.getItem("profile");
   const userData = profileStr ? JSON.parse(profileStr)?.data : null;
@@ -66,6 +70,12 @@ const Handover = () => {
         const result = await response.json();
         if (result.status) {
           setRowData(result.data.data);
+          const initialStatuses = {};
+          result.data.data.products.forEach(p => {
+            initialStatuses[p.inventorProductId] = { status: 'Complete', remark: '' };
+          });
+          setAssetStatuses(initialStatuses);
+          
           setData(result.data.data.products.map(product => ({
             serialId: result.data.data.assignedId,
             serialNumber: product?.serialNo1 || 'N/A',
@@ -96,6 +106,42 @@ const Handover = () => {
     columnHelper.accessor("serialNumber", { header: "Serial Number", size: 120 }),
     columnHelper.accessor("productName", { header: "Product Name", size: 150 }),
     columnHelper.accessor("category", { header: "Category", size: 120 }),
+    columnHelper.display({
+      id: "status",
+      header: "Status",
+      size: 150,
+      Cell: ({ row }) => {
+        const id = row.original.inventorProductId;
+        return (
+          <Select
+            size="small"
+            value={assetStatuses[id]?.status || 'Complete'}
+            onChange={(e) => setAssetStatuses(prev => ({...prev, [id]: { ...(prev[id] || {}), status: e.target.value }}))}
+            sx={{ width: '100%', fontSize: '12px', height: '32px' }}
+          >
+            <MenuItem value="Complete">Complete</MenuItem>
+            <MenuItem value="Damage">Damage</MenuItem>
+          </Select>
+        );
+      }
+    }),
+    columnHelper.display({
+      id: "remark",
+      header: "Remark",
+      size: 200,
+      Cell: ({ row }) => {
+        const id = row.original.inventorProductId;
+        return (
+          <TextField
+            size="small"
+            placeholder="Add remark"
+            value={assetStatuses[id]?.remark || ''}
+            onChange={(e) => setAssetStatuses(prev => ({...prev, [id]: { ...(prev[id] || {}), remark: e.target.value }}))}
+            sx={{ width: '100%', '& .MuiInputBase-input': { fontSize: '12px', padding: '6px 8px' } }}
+          />
+        );
+      }
+    }),
   ];
 
   const handleExport = (rows) => {
@@ -183,28 +229,52 @@ const Handover = () => {
     pdf.save(`Asset_Allocation_Form_${rowData.assignedTo.user.name.replace(/\s+/g, '_')}.pdf`);
   };
 
-  const handleCompleteHandover = async () => {
-    if (!uploadedFile) {
-      setSnackbar({
-        open: true,
-        message: 'Please upload the signed agreement file before completing handover.',
-        severity: 'error'
-      });
-      return;
-    }
-
+    const handleCompleteReturnHandover = async () => {
     setIsSubmitting(true);
     try {
+      // 1. Generate PDF
+      const input = printRef.current;
+      // We temporarily make it visible for html2canvas
+      const originalLeft = input.style.left;
+      const originalPosition = input.style.position;
+      
+      input.style.left = "0px";
+      input.style.position = "absolute";
+      input.style.zIndex = "-1"; // Keep it behind
+
+      const canvas = await html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+      });
+
+      // Restore position
+      input.style.left = originalLeft;
+      input.style.position = originalPosition;
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      
+      // Convert PDF to File object
+      const pdfBlob = pdf.output('blob');
+      const generatedFile = new File([pdfBlob], `Return_Handover_${rowData.assignedTo.user.name.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
+
+      // 2. Submit to backend
       const token = localStorage.getItem('token');
       const formData = new FormData();
 
-      // Get all inventory product IDs
       const inventoryIds = rowData.products.map(product => product.inventorProductId);
       formData.append('inventoryIds', JSON.stringify(inventoryIds));
-      formData.append('signaturedFile', uploadedFile);
+      formData.append('signaturedFile', generatedFile);
       formData.append('assignmentId', id);
 
-      const response = await fetch(`${baseUrl}/asset-mng/asset-handover/${id}`, {
+      const response = await fetch(`${baseUrl}/asset-mng/return-handover/${id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -219,15 +289,18 @@ const Handover = () => {
       if (result.status) {
         setSnackbar({
           open: true,
-          message: 'Asset handover completed successfully for all products!',
+          message: 'Asset return handover completed successfully!',
           severity: 'success'
         });
+
+        // Trigger browser download so user has a copy
+        pdf.save(`Return_Handover_${rowData.assignedTo.user.name.replace(/\s+/g, '_')}.pdf`);
 
         setTimeout(() => {
           navigate(-1);
         }, 2000);
       } else {
-        throw new Error(result.message || 'Handover failed');
+        throw new Error(result.message || 'ReturnHandover failed');
       }
     } catch (error) {
       console.error('Error completing handover:', error);
@@ -270,7 +343,7 @@ const Handover = () => {
       <Box display="flex" alignItems="center" sx={{ cursor: 'pointer' }} mb={2} onClick={() => navigate(-1)} className="line">
         <ArrowBackIcon sx={{ mr: 1 }} />
         <Typography variant="h6" fontWeight="bold" >
-          Handover
+          ReturnHandover
         </Typography>
       </Box>
       <Box width={100} />
@@ -302,63 +375,9 @@ const Handover = () => {
                 <div><strong>Assign At:</strong> {new Date(rowData.createdAt).toLocaleDateString()}</div>
               </Box>
               <Typography fontSize={12} mb={2}>Asset Allocation Agreement</Typography>
-              <Button className="Global-Button6" onClick={handleDownloadPdf} >Download Agreement Form</Button>
-              <Typography mt={1} fontSize={12}>
-                Print this form, have it signed, and upload the signed copy below
+              <Typography mt={1} fontSize={12} color="text.secondary">
+                Click "Complete ReturnHandover" below. The system will automatically generate the Return PDF with your statuses and remarks, and attach it to this handover.
               </Typography>
-            </Box>
-            <Box>
-              <Typography fontSize={12} mb={1}>Status:</Typography>
-              <Box display="flex" alignItems="center" gap={2} mt={2} mb={2}>
-                <Typography fontSize={12}>Signed Agreement</Typography>
-                {uploadedFile ? (
-                  <CheckCircleIcon color="success" fontSize="small" />
-                ) : (
-                  <CloseIcon color="error" fontSize="small" />
-                )}
-              </Box>
-
-              {uploadedFile ? (
-                <Box sx={{
-                  border: "1px solid #e0e0e0",
-                  padding: "8px 12px",
-                  borderRadius: "4px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  bgcolor: "#fff"
-                }}>
-                  <Typography fontSize={12}>{uploadedFile.name}</Typography>
-                  <IconButton size="small" onClick={handleRemoveFile}>
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              ) : (
-                <>
-                  <input
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    style={{ display: 'none' }}
-                    id="upload-file"
-                    type="file"
-                    onChange={handleFileUpload}
-                  />
-                  <label htmlFor="upload-file">
-                    <Box sx={{
-                      border: "2px dashed #646464",
-                      padding: "6px 10px",
-                      borderRadius: "8px",
-                      textAlign: "center",
-                      cursor: "pointer",
-                      bgcolor: "#fff"
-                    }}>
-                      <CloudUploadIcon fontSize="large" color="primary" />
-                      <Typography fontSize={12} color="text.secondary">
-                        <strong>Drag & Drop</strong> or <strong>Choose File</strong> to upload<br />Signed Agreement
-                      </Typography>
-                    </Box>
-                  </label>
-                </>
-              )}
             </Box>
           </Box>
         </Box>
@@ -374,8 +393,8 @@ const Handover = () => {
         {(!rowData?.approver || (userData && String(rowData.approver.id) === String(userData.id))) && (
           <Button
             className="Global-Button2"
-            onClick={handleCompleteHandover}
-            disabled={isSubmitting || !uploadedFile}
+            onClick={handleCompleteReturnHandover}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
@@ -383,7 +402,7 @@ const Handover = () => {
                 Processing...
               </>
             ) : (
-              'Complete Handover'
+              'Complete ReturnHandover'
             )}
           </Button>
         )}
@@ -501,6 +520,8 @@ const Handover = () => {
                         <th style={{ border: "1px solid #000", padding: "3px 5px" }}>Asset ID</th>
                         <th style={{ border: "1px solid #000", padding: "3px 5px" }}>Description</th>
                         <th style={{ border: "1px solid #000", padding: "3px 5px" }}>Category</th>
+                        <th style={{ border: "1px solid #000", padding: "3px 5px" }}>Status</th>
+                        <th style={{ border: "1px solid #000", padding: "3px 5px" }}>Remark</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -509,6 +530,8 @@ const Handover = () => {
                           <td style={{ border: "1px solid #000", padding: "3px 5px" }}>{product.AssetID || 'N/A'}</td>
                           <td style={{ border: "1px solid #000", padding: "3px 5px" }}>{product.name} ({product.brand?.name})</td>
                           <td style={{ border: "1px solid #000", padding: "3px 5px" }}>{product.category?.name || 'N/A'}</td>
+                          <td style={{ border: "1px solid #000", padding: "3px 5px" }}>{assetStatuses[product.inventorProductId]?.status || 'Complete'}</td>
+                          <td style={{ border: "1px solid #000", padding: "3px 5px" }}>{assetStatuses[product.inventorProductId]?.remark || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -616,4 +639,4 @@ const Handover = () => {
   );
 };
 
-export default Handover;
+export default ReturnHandover;

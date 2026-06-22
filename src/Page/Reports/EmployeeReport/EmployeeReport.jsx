@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useEffect, useState } from "react";
 import {
   MaterialReactTable,
@@ -52,6 +53,8 @@ const dummyData = [
 
 const EmployeeReport = () => {
   const [data, setData] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState("");
   const [globalFilter, setGlobalFilter] = useState("");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [rowCount, setRowCount] = useState(0);
@@ -61,6 +64,23 @@ const EmployeeReport = () => {
 
   const navigate = useNavigate();
   const { textFieldStyles, inputLabelStyle, datePickerStyles } = useInputStyle()
+
+  
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers = { Authorization: `Bearer ${token}` };
+        const response = await axios.get(`${baseUrl}/super-admin/locations?limit=1000`, { headers });
+        if (response.data?.status) {
+          setLocations(response.data.data.locations || []);
+        }
+      } catch (err) {
+        console.error("Error fetching locations:", err);
+      }
+    };
+    fetchLocations();
+  }, []);
 
   const columns = [
     columnHelper.accessor("productId", {
@@ -258,18 +278,20 @@ const EmployeeReport = () => {
               <TextField fullWidth size="small" sx={textFieldStyles} />
 
 
-              <InputLabel variant="caption" sx={inputLabelStyle}>Warehouse</InputLabel>
-
+              <InputLabel variant="caption" sx={inputLabelStyle}>Location</InputLabel>
               <TextField
                 select
                 fullWidth
                 size="small"
                 variant="outlined"
                 sx={textFieldStyles}
+                value={selectedLocation}
+                onChange={(e) => setSelectedLocation(e.target.value)}
               >
                 <MenuItem value="">Select</MenuItem>
-                <MenuItem value="WH1">Warehouse 1</MenuItem>
-                <MenuItem value="WH2">Warehouse 2</MenuItem>
+                {locations.map((loc) => (
+                  <MenuItem key={loc.id} value={loc.id}>{loc.name || loc.identificationNumber || 'Unnamed Location'}</MenuItem>
+                ))}
               </TextField>
 
 

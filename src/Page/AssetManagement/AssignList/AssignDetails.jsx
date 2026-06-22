@@ -69,7 +69,7 @@ const AssignDetails = () => {
               productName: product?.name || 'N/A',
               category: product?.category?.name || 'N/A',
               attributes: product?.specValues?.map(s => `${s.specField?.name}: ${s.value}`).join(', ') || 'N/A',
-              warehouse: "Mumbai Warehouse",
+              location: product?.grDetails?.unit?.name || 'N/A',
               inventorProductId: product.inventorProductId
             })));
           }
@@ -105,7 +105,7 @@ const AssignDetails = () => {
     columnHelper.accessor("productName", { header: "Product Name", size: 150 }),
     columnHelper.accessor("category", { header: "Category", size: 120 }),
     columnHelper.accessor("attributes", { header: "Attributes", size: 200 }),
-    columnHelper.accessor("warehouse", { header: "Warehouse", size: 150 }),
+    columnHelper.accessor("location", { header: "Location", size: 150 }),
   ];
 
   const handleExport = (rows) => {
@@ -162,7 +162,7 @@ const AssignDetails = () => {
     ),
   });
 
-  const handleDownloadAgreement = async () => {
+  const handleDownloadAgreement = () => {
     if (!rowData?.handover?.signatureFile) {
       setSnackbar({
         open: true,
@@ -173,37 +173,29 @@ const AssignDetails = () => {
     }
 
     try {
-    let fileUrl = rowData.handover.signatureFile;
-    if (fileUrl.startsWith('/')) {
-      fileUrl = `${baseUrl}${fileUrl}`;
+      let fileUrl = rowData.handover.signatureFile;
+      if (fileUrl.startsWith('/')) {
+        const base = baseUrl.replace(/\/api$/, '');
+        fileUrl = `${base}${fileUrl}`;
+      }
+
+      // Open tab synchronously to prevent popup blocker interference
+      window.open(fileUrl, '_blank');
+      
+      setSnackbar({
+        open: true,
+        message: 'Agreement document opened successfully!',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error opening agreement:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to open agreement.',
+        severity: 'error'
+      });
     }
-
-    const link = document.createElement('a');
-    link.href = fileUrl;
-    link.target = '_blank';
-    let fileName = fileUrl.split('/').pop() || `Asset_Allocation_Agreement_${rowData?.assignedTo?.user?.name?.replace(/\s+/g, '_') || 'Asset'}.pdf`;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-
-    setTimeout(() => {
-      document.body.removeChild(link);
-    }, 100);
-    
-    setSnackbar({
-      open: true,
-      message: 'Opening agreement document...',
-      severity: 'success'
-    });
-  } catch (error) {
-    console.error('Error downloading agreement:', error);
-    setSnackbar({
-      open: true,
-      message: 'Failed to download agreement. Please try again.',
-      severity: 'error'
-    });
-  }
-};
+  };
 
 
   const handleCompleteHandover = async () => {
@@ -287,7 +279,7 @@ const AssignDetails = () => {
               <div><strong>Assignment ID:</strong> {rowData.assignedId?.slice(0, 6) || 'N/A'}</div>
               <div><strong>Start Date:</strong> {rowData.startDate ? new Date(rowData.startDate).toLocaleDateString() : 'N/A'}</div>
               <div><strong>End Date:</strong> {rowData.endDate ? new Date(rowData.endDate).toLocaleDateString() : 'N/A'}</div>
-              <div><strong>Status:</strong> {rowData.status || 'N/A'}</div>
+              <div><strong>Status:</strong> {rowData.status === 'Active' ? 'Pending Handover' : rowData.status === 'Handovered' ? 'Assigned' : rowData.status || 'N/A'}</div>
             </Box>
           </Box>
         </Box>
@@ -319,7 +311,6 @@ const AssignDetails = () => {
                 className="Global-Button4"
                 startIcon={<FileDownloadIcon />}
                 onClick={handleDownloadAgreement}
-                disabled={!rowData?.handover?.signatureFile}
                 // sx={{ mt: 2 }}
               >
                 Download Agreement

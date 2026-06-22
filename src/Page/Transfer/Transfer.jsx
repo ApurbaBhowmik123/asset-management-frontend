@@ -208,7 +208,7 @@ const Transfer = () => {
       productName: product.name || "N/A",
       category: product.category?.name || product.category || "N/A",
       subCategory: product.subcategory?.name || product.subcategory || "N/A",
-      warehouse: product.grDetails?.unit?.name || "N/A",
+      location: product.grDetails?.unit?.name || "N/A",
       inventorProductId: product.inventorProductId,
       sourceUnit: product.sourceUnit,
       destinationUnit: product.destinationUnit,
@@ -229,7 +229,7 @@ const Transfer = () => {
       size: 140,
     }),
     columnHelper.accessor("productName", { header: "Product Name", size: 150 }),
-    columnHelper.accessor("warehouse", { header: "Warehouse", size: 200,
+    columnHelper.accessor("location", { header: "Location", size: 200,
        Cell: ({ cell }) => (
         <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
           {cell.getValue()}

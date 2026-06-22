@@ -3,7 +3,9 @@ export const ProductRequestStatus = Object.freeze({
   BLOCKED: "BLOCKED",
   Assigned: "Assigned",
   WRITE_OFF: "WRITE_OFF",
-  E_WASTE: "E-WASTE"
+  E_WASTE: "E-WASTE",
+  SCRAP: "Scrap",
+  SCRAP: "SCRAP"
 });
 
 const statusLabels = {
@@ -11,7 +13,8 @@ const statusLabels = {
   BLOCKED: "Blocked",
   Assigned: "Assigned",
   WRITE_OFF: "Write Off",
-  E_WASTE: "E-WASTE"
+  E_WASTE: "E-WASTE",
+  SCRAP: "Scrap"
 };
 
 const statusColors = {
@@ -20,6 +23,7 @@ const statusColors = {
   Assigned: { color: "#2563EB", bg: "#DBEAFE" },
   WRITE_OFF: { color: "#D97706", bg: "#FFF7E6" },
   E_WASTE: { color: "#D97706", bg: "#FFF7E6" },
+  SCRAP: { color: "#B91C1C", bg: "#FEF2F2" },
 };
 
 export const productStatusHelper = {
@@ -34,6 +38,7 @@ export const productStatusHelper = {
     if (upper === "WRITE-OFF" || upper === "WRITEOFF") return "WRITE_OFF";
     if (upper === "BLOCKED" || upper === "BLOCK") return "BLOCKED";
     if (upper === "E_WASTE" || upper === "E-WASTE") return "E_WASTE";
+    if (upper === "SCRAP") return "SCRAP";
 
     return status;
   },

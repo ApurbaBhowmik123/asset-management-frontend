@@ -634,7 +634,7 @@ const QRList = () => {
                   <Grid size={{ md: 6, xs: 12, sm: 6 }} key={index}>
                     <Box sx={{ textAlign: "center" }}>
                       <a
-                        href={`http://143.244.156.175/product-detail/${item.uuid}`}
+                        href={`${window.location.origin}/product-detail/${item.uuid}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

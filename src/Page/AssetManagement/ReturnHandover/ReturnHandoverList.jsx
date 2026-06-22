@@ -50,6 +50,7 @@ const ListHandHover = () => {
             const { id, desc } = sorting[0] || { id: 'name', desc: true };
 
             const url = new URL(`${baseUrl}/asset-mng/asset-helper/asset-assignable-details`);
+            url.searchParams.set('status', 'Pending Return');
             url.searchParams.set('page', pageIndex + 1);
             url.searchParams.set('limit', pageSize);
             url.searchParams.set('sortBy', id);
@@ -175,7 +176,7 @@ const ListHandHover = () => {
                         <IconButton
                             size="small"
                             color="primary"
-                            onClick={() => navigate(`/assetmanagement/handover/${row.original.assignedId}`)}
+                            onClick={() => navigate(`/assetmanagement/return-handover/${row.original.assignedId}`)}
                         >
                             <img src={handIcon} style={{ height: 20, width: 20 }} alt="Handover" />
                         </IconButton>

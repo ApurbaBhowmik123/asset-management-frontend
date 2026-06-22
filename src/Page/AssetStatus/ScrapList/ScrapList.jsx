@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import CancelIcon from "@mui/icons-material/Cancel";
-import { Box, Typography, Button, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField } from "@mui/material";
+import { Box, Typography, Button, IconButton, Chip } from "@mui/material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import log from "../../../assets/Stock/log.png";
 import {
   MaterialReactTable,
@@ -22,13 +22,9 @@ const csvConfig = mkConfig({
   useKeysAsHeaders: true,
 });
 
-const InStock = () => {
+const ScrapList = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [isScrapModalOpen, setIsScrapModalOpen] = useState(false);
-  const [assetToScrap, setAssetToScrap] = useState(null);
-  const [scrapRemarks, setScrapRemarks] = useState("");
-
   const [globalFilter, setGlobalFilter] = useState("");
   const [allData, setAllData] = useState([]); // Store all data for client-side filtering
   const [pagination, setPagination] = useState({
@@ -67,7 +63,7 @@ const InStock = () => {
         sortOrder = sorting[0].desc ? "desc" : "asc";
       }
 
-      let filterUrl = `${baseUrl}/gr/inventory/filter/InStock?page=${pageIndex + 1}&sortBy=${sortBy}&sortOrder=${sortOrder}&limit=${pageSize}&search=${globalFilter}`;
+      let filterUrl = `${baseUrl}/gr/inventory/filter/SCRAP?page=${pageIndex + 1}&sortBy=${sortBy}&sortOrder=${sortOrder}&limit=${pageSize}&search=${globalFilter}`;
       if (selectedLocation) filterUrl += `&location=${selectedLocation}`;
       if (selectedUnit) filterUrl += `&unit=${selectedUnit}`;
       if (selectedBrand) filterUrl += `&brand=${selectedBrand}`;
@@ -168,18 +164,11 @@ const InStock = () => {
 
             poValue: item.grInventoryProduct?.totalAmount || "NA",
             poNumber: "NA",
-            warrantyAmc: item.grInventoryProduct?.warrantyTill || "NA",
-            warrantyExpiryDate: item.grInventoryProduct?.warrantyTill || "NA",
             lastAuditDate: item.updatedAt || "NA",
             av: "NA",
             proxy: "NA",
             status: item.assignedStatus || "NA",
             isFree: item.isFree ? "Yes" : "No",
-            maintenanceFrequency:
-              item.grInventoryProduct?.maintenanceFrequency || "NA",
-            maintenanceDueDate:
-              item.grInventoryProduct?.maintenanceDueDate || "NA",
-            lifecycleExDate: item.grInventoryProduct?.lifecycleExDate || "NA",
             quantity: item.grInventoryProduct?.quantity || "NA",
             ratePerPiece: item.grInventoryProduct?.ratePerPiece || "NA",
             // Add all dynamic spec fields
@@ -349,14 +338,6 @@ const InStock = () => {
           >
             <img height={20} width={20} src={log} alt="view" />
           </IconButton>
-          <IconButton
-                  onClick={() => handleOpenScrapModal(row?.original?.id)}
-                  size="small"
-                  color="error"
-                  title="Scrap Asset"
-                >
-                  <CancelIcon />
-                </IconButton>
         </Box>
       ),
     }),
@@ -408,28 +389,6 @@ const InStock = () => {
     // }),
     // columnHelper.accessor("assetState", { header: "Asset State", size: 120 }),
     columnHelper.accessor("poValue", { header: "PO Value", size: 110 }),
-    columnHelper.accessor("warrantyExpiryDate", {
-      header: "Warranty Expiry",
-      size: 150,
-      Cell: ({ cell }) =>
-        dateTimeHelper.formatDate(cell.getValue(), "DD/MM/YYYY"),
-    }),
-    columnHelper.accessor("maintenanceFrequency", {
-      header: "Maintenance Frequency",
-      size: 200,
-    }),
-    columnHelper.accessor("maintenanceDueDate", {
-      header: "Maintenance Due",
-      size: 200,
-      Cell: ({ cell }) =>
-        dateTimeHelper.formatDate(cell.getValue(), "DD/MM/YYYY"),
-    }),
-    columnHelper.accessor("lifecycleExDate", {
-      header: "Lifecycle Expiry",
-      size: 150,
-      Cell: ({ cell }) =>
-        dateTimeHelper.formatDate(cell.getValue(), "DD/MM/YYYY"),
-    }),
     columnHelper.accessor("quantity", {
       header: "Quantity",
       size: 100,
@@ -453,44 +412,29 @@ const InStock = () => {
 
   // Combine base columns with dynamic columns
   
-  const handleOpenScrapModal = (id) => {
-    setAssetToScrap(id);
-    setScrapRemarks("");
-    setIsScrapModalOpen(true);
-  };
-
-  const handleCloseScrapModal = () => {
-    setIsScrapModalOpen(false);
-    setAssetToScrap(null);
-    setScrapRemarks("");
-  };
-
-  const handleConfirmScrap = async () => {
-    if (!scrapRemarks.trim()) {
-        alert("Please enter remarks");
-        return;
-    }
-    
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${baseUrl}/asset-mng/asset-helper/scrap-asset/${assetToScrap}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ userId: 1, remarks: scrapRemarks }),
-      });
-      const result = await response.json();
-      if (result.status) {
-        handleCloseScrapModal();
-        fetchData();
-      } else {
-        alert("Failed to scrap asset: " + result.message);
+  const handleScrap = async (id) => {
+    if (window.confirm("Are you sure you want to scrap this asset?")) {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${baseUrl}/asset-mng/scrap-asset/${id}`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: 1 }), // Or actual logged-in user ID
+        });
+        const result = await response.json();
+        if (result.status) {
+          alert("Asset scrapped successfully");
+          fetchData(); // Refresh list
+        } else {
+          alert("Failed to scrap asset: " + result.message);
+        }
+      } catch (error) {
+        console.error("Error scrapping asset:", error);
+        alert("Error scrapping asset");
       }
-    } catch (error) {
-      console.error("Error scrapping asset:", error);
-      alert("Error scrapping asset");
     }
   };
 
@@ -622,9 +566,18 @@ const InStock = () => {
   });
 
   return (
-    <Box sx={{ display: "flex", gap: 3, width: "100%", flexDirection: { xs: "column", md: "row" } }}>
-      <Box
-        sx={{
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <IconButton onClick={() => navigate(-1)} size="small">
+          <ArrowBackIcon />
+        </IconButton>
+        <Typography className="line" variant="h6" sx={{ fontSize: 14 }}>
+          Scrap List
+        </Typography>
+      </Box>
+      <Box sx={{ display: "flex", gap: 3, width: "100%", flexDirection: { xs: "column", md: "row" } }}>
+        <Box
+          sx={{
           width: { xs: "100%", md: "300px" },
           flexShrink: 0,
           border: "1px solid #e0e0e0",
@@ -764,47 +717,6 @@ const InStock = () => {
             Clear Filters
           </Button>
         </Box>
-
-        <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333", borderBottom: "1px solid #eee", pb: 1, mt: 2 }}>
-          Stock Summary
-        </Typography>
-
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: "250px", overflowY: "auto" }}>
-          {summaryData.length === 0 ? (
-            <Typography variant="body2" sx={{ color: "#999", fontStyle: "italic", textAlign: "center", py: 2 }}>
-              No stock in this view
-            </Typography>
-          ) : (
-            summaryData.map((item, idx) => (
-              <Box
-                key={idx}
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  p: 1.5,
-                  borderRadius: 1,
-                  backgroundColor: "#F9F9F9",
-                  border: "1px solid #eee",
-                }}
-              >
-                <Typography variant="body2" sx={{ fontWeight: "500", color: "#444", pr: 1 }}>
-                  {item.brand} - {item.product}
-                </Typography>
-                <Chip
-                  label={item.quantity}
-                  size="small"
-                  sx={{
-                    backgroundColor: "#FFE3E1",
-                    color: "#D32F2F",
-                    fontWeight: "bold",
-                    fontSize: "12px",
-                  }}
-                />
-              </Box>
-            ))
-          )}
-        </Box>
       </Box>
 
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -825,37 +737,9 @@ const InStock = () => {
           <MaterialReactTable table={table} />
         </Box>
       </Box>
-    
-      <Dialog open={isScrapModalOpen} onClose={handleCloseScrapModal} maxWidth="sm" fullWidth>
-        <DialogTitle>Scrap Asset</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Please provide a remark or reason for scrapping this asset.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Remarks"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={scrapRemarks}
-            onChange={(e) => setScrapRemarks(e.target.value)}
-            multiline
-            rows={3}
-            required
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseScrapModal}>Cancel</Button>
-          <Button onClick={handleConfirmScrap} color="error" variant="contained">
-            Scrap
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-</Box>
+    </Box>
+    </Box>
   );
 };
 
-export default InStock;
+export default ScrapList;

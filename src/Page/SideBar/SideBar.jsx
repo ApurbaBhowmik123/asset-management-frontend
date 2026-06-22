@@ -461,7 +461,7 @@ const Sidebar = ({
               <Collapse in={openSection === "management"} timeout="auto" unmountOnExit>
                 {renderSubItemList([
                   {
-                    label: "Assign Asset",
+                    label: "Allocation Asset",
                     path: "/assetmanagement/assignasset",
                     requiredPermission: "create-asset"
                   },
@@ -471,15 +471,26 @@ const Sidebar = ({
                     requiredPermission: "read-asset"
                   },
                   {
+                    label: "Assign Handover",
+                    path: "/assetmanagement/listhandhover",
+                    requiredPermission: "update-asset"
+                  },
+                  {
                     label: "Unassign Asset",
                     path: "/assetmanagement/unassignasset",
                     requiredPermission: "unassign-asset"
                   },
                   {
-                    label: "Handover",
-                    path: "/assetmanagement/listhandhover",
+                    label: "Unassign List",
+                    path: "/assetmanagement/unassign-list",
+                    requiredPermission: "read-asset"
+                  },
+                  {
+                    label: "Return Handover",
+                    path: "/assetmanagement/return-handover",
                     requiredPermission: "update-asset"
                   },
+
                 ])}
               </Collapse>
             </>
@@ -520,6 +531,11 @@ const Sidebar = ({
                   {
                     label: "All Asset",
                     path: "/assetstatus/all-asset",
+                    requiredPermission: "read-inventory"
+                  },
+                  {
+                    label: "Scrap Product List",
+                    path: "/assetstatus/scrap-list",
                     requiredPermission: "read-inventory"
                   },
                   {
