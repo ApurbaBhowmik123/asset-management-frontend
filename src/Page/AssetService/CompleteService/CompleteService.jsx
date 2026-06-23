@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import pdfIcon from "../../../assets/Service/pdf.png";
-import logo from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
+import logo from "../../../assets/Sidebarimages/Layer 1 1.png";
 const csvConfig = mkConfig({
   fieldSeparator: ",",
   decimalSeparator: ".",

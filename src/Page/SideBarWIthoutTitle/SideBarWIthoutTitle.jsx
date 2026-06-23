@@ -14,7 +14,7 @@ import ArrowIcon from "../../assets/Sidebarimages/Vector22.png";
 import { useNavigate } from "react-router-dom";
 
 // Icons
-import logo from "../../assets/Sidebarimages/Layer 1 1.jpeg";
+import logo from "../../assets/Sidebarimages/Layer 1 1.png";
 import dashboardIcon from "../../assets/Sidebarimages/Vector (8).png";
 import dashboardIcon1 from "../../assets/Sidebarimages/Vector (15).png";
 import setupIcon from "../../assets/Sidebarimages/Group@3x.png";
@@ -295,22 +295,22 @@ const SideBarWithoutTitle = ({
       <Box px={expanded ? 2 : 1} pb={1.5} pt={0.5}>
         <Box
           onClick={() => navigate("/")}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "50px",
-            backgroundColor: "#f8fafc",
-            borderRadius: "12px",
-            border: "1px solid #f1f5f9",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              transform: "translateY(-1px)",
-              boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
-            },
-            cursor: "pointer",
-          }}
+        // sx={{
+        //   display: "flex",
+        //   alignItems: "center",
+        //   justifyContent: "center",
+        //   height: "50px",
+        //   backgroundColor: "#f8fafc",
+        //   borderRadius: "12px",
+        //   border: "1px solid #f1f5f9",
+        //   boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+        //   transition: "all 0.2s ease",
+        //   "&:hover": {
+        //     transform: "translateY(-1px)",
+        //     boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
+        //   },
+        //   cursor: "pointer",
+        // }}
         >
           <img
             src={logo}

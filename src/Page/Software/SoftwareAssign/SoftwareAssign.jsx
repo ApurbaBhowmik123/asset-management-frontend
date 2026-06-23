@@ -1,544 +1,295 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Box,
-  Typography,
-  Avatar,
-  IconButton,
-  Chip,
-  Button,
-  TextField,
-  Modal,
-  Checkbox,
-  FormControlLabel,
-  Alert,
-  Snackbar,
+  Box, Typography, Button, TextField, MenuItem, Select, FormControl, InputLabel,
+  Snackbar, Alert, IconButton, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from "@mui/material";
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  createMRTColumnHelper,
-} from "material-react-table";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import Editicon1 from "../../../assets/EmployeeImages/Vector.png";
-// import Deleteicon1 from "../../assets/EmployeeImages/Vector (1).png";
-import AddIcon from "@mui/icons-material/Add";
-import { mkConfig, generateCsv, download } from "export-to-csv";
-import ViewIcon from "../../../assets/EmployeeImages/Group (2).png";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { baseUrl } from "../../Api";
-import { Eye } from "lucide-react";
 
 const SoftwareAssign = () => {
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [data, setData] = useState([]);
-  const [isError, setIsError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefetching, setIsRefetching] = useState(false);
-  const [rowCount, setRowCount] = useState(0);
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: 5,
-  });
-  const [sorting, setSorting] = useState([]);
-  const [showAddVendor, setShowAddVendor] = useState(false);
-  const [showProductList, setShowProductList] = useState(false);
+  const [units, setUnits] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [softwares, setSoftwares] = useState([]);
+  const [licenseTypes, setLicenseTypes] = useState([]);
 
-  //  State for Modal
-  const [openModal, setOpenModal] = useState(false);
-  const [selectedSoftwares, setSelectedSoftwares] = useState([]);
-  const [softwares, setSoftwares] = useState([]); // fetched software list
-  const [loadingSoftwares, setLoadingSoftwares] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedUnit, setSelectedUnit] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedUser, setSelectedUser] = useState("");
+  const [selectedLicenseType, setSelectedLicenseType] = useState("");
+  const [unitLocations, setUnitLocations] = useState([]);
+  const [notes, setNotes] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
 
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
-  // Fetch Software List API
-  const fetchSoftwares = async () => {
-    setLoadingSoftwares(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${baseUrl}/software/all`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+  const [items, setItems] = useState([]);
+  const [currentSoftware, setCurrentSoftware] = useState("");
+  const [currentQuantity, setCurrentQuantity] = useState(1);
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch softwares");
-      }
-
-      const json = await response.json();
-      setSoftwares(json.data || []); // Adjust if API response structure differs
-    } catch (error) {
-      console.error("Error fetching softwares:", error);
-      setIsError(true);
-    } finally {
-      setLoadingSoftwares(false);
-    }
-  };
-
-  const handleCheckboxChange = (softwareId) => {
-    setSelectedSoftwares((prev) =>
-      prev.includes(softwareId)
-        ? prev.filter((s) => s !== softwareId)
-        : [...prev, softwareId]
-    );
-  };
-
-  const handleSubmitSoftware = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const body = {
-        softwareIds: selectedSoftwares,
-        assignToUser: selectedUserId,
-      };
-
-      const response = await fetch(`${baseUrl}/software/assign`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to assign software");
-      }
-
-      const json = await response.json();
-      setSnackbarMessage(json.message || "Operation successful");
-      setSnackbarSeverity(json.status ? "success" : "error");
-      setSnackbarOpen(true);
-      await fetchData();
-    } catch (error) {
-      console.error("Error assigning software:", error);
-      setIsError(true);
-      setSnackbarMessage("Failed to assign/unassign software");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-    } finally {
-      setOpenModal(false);
-      setSelectedSoftwares([]);
-    }
-  };
-
-  const columnHelper = createMRTColumnHelper();
-
-  const columns = [
-    columnHelper.accessor("uuid", {
-      header: "Emp ID",
-      size: 100,
-      Cell: ({ cell }) => (
-        <Typography variant="body2">{cell.getValue()}</Typography>
-      ),
-    }),
-    columnHelper.accessor("name", {
-      header: "Name",
-      size: 120,
-    }),
-    columnHelper.accessor("email", {
-      header: "Email",
-      size: 150,
-    }),
-    columnHelper.accessor(
-      (row) => row.roles?.map((role) => role.name).join(", ") || "—",
-      {
-        id: "roles",
-        header: "Roles",
-        size: 120,
-        Cell: ({ cell }) => (
-          <Typography variant="body2">{cell.getValue()}</Typography>
-        ),
-      }
-    ),
-    columnHelper.display({
-      id: "actions",
-      header: "Actions",
-      size: 160,
-      Cell: ({ row }) => (
-        <Box sx={{ display: "flex", gap: 1 }}>
-          {/* Button to open modal and fetch softwares */}
-          <Button
-            className="Global-Button7"
-            onClick={() => {
-              setSelectedUserId(row.original.id); // save user ID
-              setSelectedSoftwares(
-                row.original.softAssignedTo?.map((s) => s.software.id) || []
-              ); // preselect assigned
-              fetchSoftwares();
-              setOpenModal(true);
-            }}
-          >
-            Assign/Unassign Software
-          </Button>
-
-        </Box>
-      ),
-    }),
-    columnHelper.accessor((row) => row.unit?.name || "-", {
-      id: "unitName",
-      header: "Unit",
-      size: 110,
-    }),
-    columnHelper.accessor((row) => row.location?.name || "-", {
-      id: "locationName",
-      header: "Location",
-      size: 110,
-    }),
-    columnHelper.accessor("designation", {
-      header: "Designation",
-      size: 120,
-      Cell: ({ cell }) => (
-        <span
-          style={{
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-          }}
-        >
-          {cell.getValue()}
-        </span>
-      ),
-    }),
-
-  ];
-
-  // CSV Config
-  const csvConfig = mkConfig({
-    fieldSeparator: ",",
-    decimalSeparator: ".",
-    useKeysAsHeaders: true,
-    filename:
-      "employees_export_" +
-      new Date().toLocaleDateString("en-GB").replace(/\//g, "-"),
-  });
-
-  const fetchData = async () => {
-    if (!data.length) {
-      setIsLoading(true);
-    } else {
-      setIsRefetching(true);
-    }
-
-    const token = localStorage.getItem("token");
-    const url = new URL(`${baseUrl}/super-admin/acl/user`);
-    url.searchParams.set("page", pagination.pageIndex + 1);
-    url.searchParams.set("limit", pagination.pageSize);
-
-    if (sorting.length > 0) {
-      url.searchParams.set("sortBy", sorting[0].id);
-      url.searchParams.set("sortOrder", sorting[0].desc ? "desc" : "asc");
-    }
-    if (globalFilter) {
-      url.searchParams.set("search", globalFilter);
-    }
-
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const json = await response.json();
-      setData(json.data.data);
-      setRowCount(json.data.total);
-    } catch (error) {
-      setIsError(true);
-      console.error("Error fetching data:", error);
-    } finally {
-      setIsLoading(false);
-      setIsRefetching(false);
-    }
-  };
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   useEffect(() => {
     fetchData();
-  }, [pagination.pageIndex, pagination.pageSize, globalFilter, sorting]);
+  }, []);
 
-  const flattenEmployeeData = (employee) => {
-    return {
-      "Emp ID": employee.uuid || "N/A",
-      Name: employee.name || "N/A",
-      Email: employee.email || "N/A",
-      Roles: employee.roles?.map((role) => role.name).join(", ") || "N/A",
-      Unit: employee.unit?.name || "N/A",
-      Location: employee.location?.name || "N/A",
-      Designation: employee.designation || "N/A",
-      "Products Count":
-        employee.productAssignAssignedToUser?.filter(
-          (p) => p.status === "Active" || p.status === "Handovered"
-        ).length || 0,
-    };
-  };
+  const fetchData = async () => {
+    const token = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
 
-  const handleExportRows = (rows) => {
     try {
-      const rowData = rows.map((row) => flattenEmployeeData(row.original));
-      const csv = generateCsv(csvConfig)(rowData);
-      download(csvConfig)(csv);
-    } catch (error) {
-      console.error("Export error:", error);
-      setIsError(true);
+      const [uRes, locRes, usrRes, licRes] = await Promise.all([
+        fetch(`${baseUrl}/gr/units/list`, { headers }),
+        fetch(`${baseUrl}/super-admin/locations?limit=1000`, { headers }),
+        fetch(`${baseUrl}/asset-mng/asset-helper/user-list`, { headers }),
+        fetch(`${baseUrl}/software/license-types`, { headers }),
+      ]);
+      const [uData, locData, usrData, licData] = await Promise.all([
+        uRes.json(), locRes.json(), usrRes.json(), licRes.json()
+      ]);
+
+      if (uData.data) setUnits(uData.data);
+      if (locData.data) setLocations(locData.data.data || locData.data);
+      if (usrData.data) setUsers(usrData.data);
+      if (licData.data) setLicenseTypes(licData.data);
+    } catch (err) {
+      showSnackbar("Error fetching data", "error");
     }
   };
 
-  const handleExportData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${baseUrl}/super-admin/acl/user?limit=${rowCount}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+  const showSnackbar = (message, severity) => setSnackbar({ open: true, message, severity });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+  const handleUnitChange = (e) => {
+    const uId = e.target.value;
+    setSelectedUnit(uId);
+    setSelectedLocation("");
+    if (uId) {
+      const unit = units.find(u => u.id === uId);
+      if (unit && unit.unitlocation && unit.unitlocation.length > 0) {
+         const uLocs = [];
+         unit.unitlocation.forEach(ul => {
+            if (ul.location && !uLocs.some(l => l.id === ul.location.id)) {
+               uLocs.push(ul.location);
+            }
+         });
+         setUnitLocations(uLocs);
+      } else {
+         setUnitLocations([]);
       }
-
-      const json = await response.json();
-      const rowData = json.data.data.map((employee) =>
-        flattenEmployeeData(employee)
-      );
-      const csv = generateCsv(csvConfig)(rowData);
-      download(csvConfig)(csv);
-    } catch (error) {
-      console.error("Error exporting data:", error);
-      setIsError(true);
+    } else {
+      setUnitLocations([]);
     }
   };
 
-  const table = useMaterialReactTable({
-    columns,
-    data,
-    state: {
-      globalFilter,
-      isLoading,
-      pagination,
-      showAlertBanner: isError,
-      showProgressBars: isRefetching,
-      sorting,
-    },
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    rowCount,
-    manualPagination: true,
-    manualSorting: true,
-    enableGlobalFilter: true,
-    enableRowSelection: true,
-    enableMultiRowSelection: true,
-    enableColumnResizing: false,
-    enableColumnFilters: false,
-    columnResizeMode: "onChange",
-    paginationDisplayMode: "pages",
-    positionToolbarAlertBanner: "bottom",
-    layoutMode: "grid",
-    muiTablePaperProps: {
-      elevation: 0,
-      sx: { border: "1px solid #e0e0e0", borderRadius: 2 },
-    },
-    muiTableHeadRowProps: {
-      sx: {
-        backgroundColor: "#FFE3E1",
-      },
-    },
-    muiTableBodyCellProps: {
-      sx: {
-        fontSize: "12px",
-        whiteSpace: "nowrap",
-      },
-    },
-    muiTableBodyRowProps: {
-      sx: {
-        "&:nth-of-type(odd)": {
-          backgroundColor: "#fafafa",
-        },
-      },
-    },
-    muiTableContainerProps: {
-      sx: {
-        width: "100%",
-        overflowX: "auto",
-        maxWidth: "100%",
-        "&::-webkit-scrollbar": {
-          height: "8px",
-          width: "8px",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "#f1f1f1",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          backgroundColor: "#888",
-          borderRadius: "8px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          background: "#555",
-        },
-      },
-    },
+  const handleAddItem = () => {
+    if (!currentSoftware || currentQuantity < 1) {
+      showSnackbar("Select software and valid quantity", "error");
+      return;
+    }
+    const softwareObj = softwares.find(s => s.id === currentSoftware);
+    if (!softwareObj) return;
 
-    renderTopToolbarCustomActions: ({ table }) => (
-      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-        <Button
-          onClick={handleExportData}
-          startIcon={<FileDownloadIcon />}
-          className="Global-Button4"
-        >
-          Export All Data
-        </Button>
-        <Button
-          onClick={() =>
-            handleExportRows(table.getPrePaginationRowModel().rows)
-          }
-          startIcon={<FileDownloadIcon />}
-          className="Global-Button4"
-        >
-          Export All Rows
-        </Button>
-        <Button
-          onClick={() => handleExportRows(table.getRowModel().rows)}
-          startIcon={<FileDownloadIcon />}
-          className="Global-Button4"
-        >
-          Export Page Rows
-        </Button>
-        <Button
-          disabled={
-            !table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
-          }
-          onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
-          startIcon={<FileDownloadIcon />}
-          className="Global-Button5"
-        >
-          Export Selected Rows
-        </Button>
-      </Box>
-    ),
-    renderBottomToolbarCustomActions: () => (
-      <Typography variant="body2" sx={{ ml: 2, fontWeight: 500 }}>
-        Total Rows: {rowCount}
-      </Typography>
-    ),
-  });
+    if (softwareObj.currentQuantity < currentQuantity) {
+      showSnackbar(`Insufficient quantity. Available: ${softwareObj.currentQuantity}`, "error");
+      return;
+    }
+
+    setItems([...items, { softwareId: currentSoftware, name: softwareObj.name, quantity: currentQuantity }]);
+    setCurrentSoftware("");
+    setCurrentQuantity(1);
+  };
+
+  const handleRemoveItem = (index) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedUnit && !selectedLocation && !selectedUser) {
+      showSnackbar("Select Unit, Location, or User", "error");
+      return;
+    }
+    if (items.length === 0) {
+      showSnackbar("Add at least one software to assign", "error");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${baseUrl}/software/assign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          unitId: selectedUnit || null,
+          locationId: selectedLocation || null,
+          assignToUser: selectedUser || null,
+          notes,
+          items: items.map(i => ({ softwareId: i.softwareId, quantity: i.quantity })),
+          expiryDate: expiryDate || null
+        })
+      });
+      const data = await res.json();
+      // Backend error handler returns 200 OK but sets status: false and errorResponse
+      if (res.ok && data.status !== false && !data.errorResponse) {
+        showSnackbar(data.message || "Assigned successfully", "success");
+        setItems([]);
+        setSelectedUnit("");
+        setSelectedLocation("");
+        setSelectedUser("");
+        setNotes("");
+        setExpiryDate("");
+        setSelectedLicenseType("");
+        setSoftwares([]);
+        setCurrentSoftware("");
+        fetchData(); // refresh dropdowns
+      } else {
+        showSnackbar(data.errorResponse?.message || data.message || "Failed to assign", "error");
+      }
+    } catch (err) {
+      showSnackbar("Error submitting assignment", "error");
+    }
+  };
+
+  const displayLocations = selectedUnit ? unitLocations : locations;
+  
+
+  const handleLicenseTypeChange = async (e) => {
+    const type = e.target.value;
+    setSelectedLicenseType(type);
+    setCurrentSoftware("");
+    const token = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
+    if (type) {
+      try {
+        const res = await fetch(`${baseUrl}/software/all?licenseType=${encodeURIComponent(type)}`, { headers });
+        const data = await res.json();
+        if (data.data) setSoftwares(data.data);
+      } catch(err) { console.error(err); }
+    } else {
+      setSoftwares([]);
+    }
+  };
 
   return (
-    <Box sx={{ width: "100%" }}>
-      {!showAddVendor && !showProductList && (
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 2,
-            justifyContent: "center",
-            mb: 3,
-          }}
-        ></Box>
-      )}
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold", color: "#100b31" }}>
+        Assign Software
+      </Typography>
 
-      <Box
-        sx={{
-          width: {
-            xs: "100%",
-            sm: "100%",
-            md: "100%",
-            lg: "1050px",
-            xl: "1300px",
-          },
-          overflow: "auto",
-          mx: "auto",
-          px: { xs: 1, sm: 2 },
-        }}
-      >
-        <MaterialReactTable table={table} />
-      </Box>
+      <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+        <Box display="flex" gap={2} mb={2}>
+          <FormControl fullWidth>
+            <InputLabel>Unit</InputLabel>
+            <Select value={selectedUnit} onChange={handleUnitChange} label="Unit">
+              <MenuItem value="">None</MenuItem>
+              {units.map(u => <MenuItem key={u.id} value={u.id}>{u.name}</MenuItem>)}
+            </Select>
+          </FormControl>
 
-      {/* Modal for Assign Software */}
-      <Modal open={openModal} onClose={() => setOpenModal(false)}>
-        <Box
-          sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            bgcolor: "white",
-            p: 3,
-            borderRadius: 2,
-            width: 500,
-            boxShadow: 24,
-          }}
-        >
-          <Typography variant="h6" gutterBottom>
-            Assign/Unassign Software
-          </Typography>
+          <FormControl fullWidth>
+            <InputLabel>Location</InputLabel>
+            <Select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} label="Location">
+              <MenuItem value="">None</MenuItem>
+              {displayLocations.map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
+            </Select>
+          </FormControl>
 
-          {loadingSoftwares ? (
-            <Typography variant="body2">Loading softwares...</Typography>
-          ) : softwares.length > 0 ? (
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr", // ✅ 2 columns
-                gap: 1,
-              }}
-            >
-              {softwares.map((software) => (
-                <FormControlLabel
-                  key={software.id}
-                  control={
-                    <Checkbox
-                      checked={selectedSoftwares.includes(software.id)}
-                      onChange={() => handleCheckboxChange(software.id)}
-                    />
-                  }
-                  label={software.name}
-                />
-              ))}
-
-            </Box>
-          ) : (
-            <Typography variant="body2">No softwares found</Typography>
-          )}
-
-          <Box sx={{ mt: 2, textAlign: "right" }}>
-            <Button
-              className="Global-Button2"
-              onClick={handleSubmitSoftware}
-            >
-              Submit
-            </Button>
-          </Box>
+          <FormControl fullWidth>
+            <InputLabel>Assign To User</InputLabel>
+            <Select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} label="Assign To User">
+              <MenuItem value="">None</MenuItem>
+              {users.map(u => <MenuItem key={u.id} value={u.id}>{u.name}</MenuItem>)}
+            </Select>
+          </FormControl>
         </Box>
-      </Modal>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          sx={{ width: "100%" }}
-        >
-          {snackbarMessage}
+
+        <TextField 
+          fullWidth 
+          label="Notes / Remarks" 
+          value={notes} 
+          onChange={(e) => setNotes(e.target.value)} 
+          sx={{ mb: 3 }} 
+        />
+        <TextField 
+          fullWidth 
+          type="date"
+          label="Expiry Date" 
+          value={expiryDate} 
+          onChange={(e) => setExpiryDate(e.target.value)} 
+          InputLabelProps={{ shrink: true }}
+          sx={{ mb: 3 }} 
+        />
+
+        <Typography variant="h6" sx={{ mb: 2 }}>Add Software Items</Typography>
+        <Box display="flex" gap={2} mb={3}>
+          <FormControl fullWidth>
+            <InputLabel>License Type</InputLabel>
+            <Select value={selectedLicenseType} onChange={handleLicenseTypeChange} label="License Type">
+              <MenuItem value="">All Types</MenuItem>
+              {licenseTypes.map(lt => <MenuItem key={lt} value={lt}>{lt}</MenuItem>)}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth>
+            <InputLabel>Software</InputLabel>
+            <Select value={currentSoftware} onChange={(e) => setCurrentSoftware(e.target.value)} label="Software">
+              {softwares.map(s => (
+                <MenuItem key={s.id} value={s.id}>
+                  {s.name} (Qty: {s.currentQuantity})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField 
+            label="Quantity" 
+            type="number" 
+            value={currentQuantity} 
+            onChange={(e) => setCurrentQuantity(Number(e.target.value))} 
+            sx={{ width: 150 }} 
+          />
+
+          <Button variant="contained" onClick={handleAddItem} sx={{ bgcolor: "#00005e" }}>
+            Add Item
+          </Button>
+        </Box>
+
+        {items.length > 0 && (
+          <TableContainer component={Paper} sx={{ mb: 3 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Software Name</TableCell>
+                  <TableCell>Quantity</TableCell>
+                  <TableCell>Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {items.map((item, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell>
+                      <IconButton color="error" onClick={() => handleRemoveItem(idx)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+
+        <Box display="flex" justifyContent="flex-end">
+          <Button variant="contained" onClick={handleSubmit} sx={{ bgcolor: "#00005e" }}>
+            Submit Assignment
+          </Button>
+        </Box>
+      </Paper>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
         </Alert>
       </Snackbar>
-
-
     </Box>
   );
 };

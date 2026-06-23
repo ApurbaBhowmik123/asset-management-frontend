@@ -18,6 +18,13 @@ import {
   DialogActions,
   Snackbar,
   Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper
 } from "@mui/material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import AddIcon from "@mui/icons-material/Add";
@@ -35,10 +42,20 @@ const SoftwareNameList = () => {
   const [totalRows, setTotalRows] = useState(0);
   const [loading, setLoading] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUnitId, setSelectedUnitId] = useState("");
+  const [selectedLocationId, setSelectedLocationId] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [users, setUsers] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [showAddSoftware, setShowAddSoftware] = useState(false);
   const [selectedSoftwareId, setSelectedSoftwareId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [softwareToDelete, setSoftwareToDelete] = useState(null);
+  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [selectedLogSoftware, setSelectedLogSoftware] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -49,6 +66,24 @@ const SoftwareNameList = () => {
   const [sorting, setSorting] = useState([]);
 
   const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchDropdowns = async () => {
+      try {
+        const [uRes, locRes, usrRes] = await Promise.all([
+          fetch(`${baseUrl}/gr/units/list`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${baseUrl}/super-admin/locations?limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${baseUrl}/asset-mng/asset-helper/user-list`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        const [uData, locData, usrData] = await Promise.all([uRes.json(), locRes.json(), usrRes.json()]);
+        if (uData.data) setUnits(uData.data);
+        if (locData.data) setLocations(locData.data.data || locData.data);
+        if (usrData.data) setUsers(usrData.data);
+      } catch (err) { console.error(err); }
+    };
+    fetchDropdowns();
+  }, []);
+
 
   const columns = [
     columnHelper.accessor("uuid", { header: "ID", size: 60 }),
@@ -105,6 +140,14 @@ const SoftwareNameList = () => {
           >
             <img src={Editicon1} alt="edit" width={16} height={16} />
           </IconButton>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={() => handleOpenLogs(row.original)}
+            sx={{ ml: 1, p: 0.5, fontSize: "10px" }}
+          >
+            Logs
+          </Button>
           {/* <IconButton
             color="error"
             size="small"
@@ -196,6 +239,23 @@ const SoftwareNameList = () => {
 
   const showSnackbar = (message, severity) => {
     setSnackbar({ open: true, message, severity });
+  };
+
+  
+  const handleOpenLogs = async (software) => {
+    setSelectedLogSoftware(software);
+    setLogModalOpen(true);
+    try {
+      const response = await axios.get(`${baseUrl}/software/logs?softwareId=${software.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.status) {
+        setLogs(response.data.data?.data || response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching logs:", error);
+      showSnackbar("Failed to fetch logs", "error");
+    }
   };
 
   const handleDeleteSoftware = async () => {
@@ -440,6 +500,40 @@ const SoftwareNameList = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+          <Dialog open={logModalOpen} onClose={() => setLogModalOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Logs for {selectedLogSoftware?.name}</DialogTitle>
+        <DialogContent dividers>
+          <TableContainer component={Paper}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Date</TableCell>
+                  <TableCell>User</TableCell>
+                  <TableCell>Action</TableCell>
+                  <TableCell>Details</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {logs.length === 0 ? (
+                  <TableRow><TableCell colSpan={4} align="center">No logs found</TableCell></TableRow>
+                ) : (
+                  logs.map((log, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{new Date(log.createdAt).toLocaleString()}</TableCell>
+                      <TableCell>{log.user?.name || '-'}</TableCell>
+                      <TableCell>{log.action}</TableCell>
+                      <TableCell>{log.actionDetails}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLogModalOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

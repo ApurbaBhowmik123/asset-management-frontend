@@ -5,7 +5,8 @@
 }
 
 .sidebar {
-  width: 240px; /* or whatever fits your design */
+  width: 240px;
+  /* or whatever fits your design */
   background-color: #1f1f1f;
   color: white;
 }
@@ -20,8 +21,8 @@
 
 .page-content {
   flex: 1;
-  padding: 16px;
+  padding: 6px;
   overflow: auto;
   min-height: 0;
+  background-color: #07223e;
 }
-

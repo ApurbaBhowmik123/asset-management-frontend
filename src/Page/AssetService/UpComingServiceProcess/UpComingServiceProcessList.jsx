@@ -17,7 +17,7 @@ import { mkConfig, generateCsv, download } from "export-to-csv";
 import { useNavigate } from "react-router-dom";
 import ViewIcon from "../../../assets/TicketImages/Group.png";
 import pdfIcon from "../../../assets/Service/pdf.png";
-import logo from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
+import logo from "../../../assets/Sidebarimages/Layer 1 1.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import "./PdfTemplate.css";

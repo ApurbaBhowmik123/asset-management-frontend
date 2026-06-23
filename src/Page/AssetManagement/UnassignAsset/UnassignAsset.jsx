@@ -202,7 +202,30 @@ const UnassignAsset = () => {
           };
         });
 
-        setData(transformedData);
+        const groupedMap = new Map();
+        transformedData.forEach(item => {
+           const id = item.assignmentId;
+           if (!id) {
+               groupedMap.set(item.uuid, { ...item, _group: [item] });
+               return;
+           }
+           if (!groupedMap.has(id)) {
+               groupedMap.set(id, { ...item, _group: [item] });
+           } else {
+               const existing = groupedMap.get(id);
+               existing._group.push(item);
+               existing.uuid = existing._group.map(g => g.uuid).join(', ');
+               existing.serialNumber = existing._group.map(g => g.serialNumber).join(', ');
+               existing.model = existing._group.map(g => g.model).join(', ');
+               existing.assetTag = existing._group.map(g => g.assetTag).join(', ');
+               existing.sapCode = existing._group.map(g => g.sapCode).join(', ');
+               existing.assetType = existing._group.map(g => g.assetType).join(', ');
+           }
+        });
+
+        const groupedData = Array.from(groupedMap.values());
+
+        setData(groupedData);
         setTotalRows(result.data.total || 0);
         setTotalPages(result.data.totalPages || 0);
 
@@ -283,7 +306,7 @@ const UnassignAsset = () => {
       }
 
       const payload = {
-        inventoryProductIds: [selectedAsset.id],
+        inventoryProductIds: selectedAsset._group ? selectedAsset._group.map(g => g.id) : [selectedAsset.id],
         assignmentIds: [selectedAsset.assignmentId],
         approvedDate: new Date(formData.date).toISOString(),
         approvedBy: selectedUser.id.toString(),

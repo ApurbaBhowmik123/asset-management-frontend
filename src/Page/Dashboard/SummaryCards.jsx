@@ -19,12 +19,12 @@ const SummaryCards = () => {
     { label: 'Asset In Stock', count: null, icon: SummaryIcon1, pathName: '/assetstatus/in-stock' },
     { label: 'Assigned ', count: null, icon: SummaryIcon2, pathName: '/assetstatus/assigned-stock' },
     { label: 'On hold', count: null, icon: SummaryIcon1 },
-    { label: 'Pending setup', count: null, icon: SummaryIcon2 },
-    { label: 'Pending Service', count: null, icon: SummaryIcon1 },
-    { label: 'Open Tickets', count: null, icon: SummaryIcon2, pathName: '/ticketservice/ticketlist' },
+    // { label: 'Pending setup', count: null, icon: SummaryIcon2 },
+    // { label: 'Pending Service', count: null, icon: SummaryIcon1 },
+    // { label: 'Open Tickets', count: null, icon: SummaryIcon2, pathName: '/ticketservice/ticketlist' },
     { label: 'Total Employee', count: null, icon: SummaryIcon1, pathName: '/employee/activeemp' },
-    { label: 'Request Pending', count: null, icon: SummaryIcon3, pathName: '/request/initiate' },
-    { label: 'Write-Off', count: null, icon: SummaryIcon3, pathName: '/assetstatus/write-off' },
+    // { label: 'Request Pending', count: null, icon: SummaryIcon3, pathName: '/request/initiate' },
+    // { label: 'Write-Off', count: null, icon: SummaryIcon3, pathName: '/assetstatus/write-off' },
 
   ];
 
@@ -53,12 +53,12 @@ const SummaryCards = () => {
           { label: " In Stock", count: data.data?.totalInstock || 0, icon: SummaryIcon1, pathName: '/assetstatus/in-stock' },
           { label: "Assigned ", count: data.data?.totalAssignedStock || 0, icon: SummaryIcon2, pathName: '/assetstatus/assigned-stock' },
           { label: "On hold", count: data.data?.totalholdSetup || 0, icon: SummaryIcon1 },
-          { label: "Pending setup", count: data.data?.totalPendingSetup || 0, icon: SummaryIcon2 },
-          { label: "Pending Service", count: data.data?.totalPendingServices || 0, icon: SummaryIcon1 },
-          { label: "Open Tickets", count: data.data?.totalopenTickets || 0, icon: SummaryIcon2, pathName: '/ticketservice/ticketlist' },
+          // { label: "Pending setup", count: data.data?.totalPendingSetup || 0, icon: SummaryIcon2 },
+          // { label: "Pending Service", count: data.data?.totalPendingServices || 0, icon: SummaryIcon1 },
+          // { label: "Open Tickets", count: data.data?.totalopenTickets || 0, icon: SummaryIcon2, pathName: '/ticketservice/ticketlist' },
           { label: "Total Employee", count: data.data?.totalEmployees || 0, icon: SummaryIcon1, pathName: '/employee/activeemp' },
-          { label: "Request Pending", count: data.data?.totalRequestsPending || 0, icon: SummaryIcon2, pathName: '/request/initiate' },
-          { label: "Write-Off", count: data.data?.totalEwaste || 0, icon: SummaryIcon1, pathName: '/assetstatus/write-off' }
+          // { label: "Request Pending", count: data.data?.totalRequestsPending || 0, icon: SummaryIcon2, pathName: '/request/initiate' },
+          // { label: "Write-Off", count: data.data?.totalEwaste || 0, icon: SummaryIcon1, pathName: '/assetstatus/write-off' }
         ];
 
         setSummaryData(transformedData);
@@ -80,7 +80,7 @@ const SummaryCards = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 4, alignItems: 'stretch' }}>
+    <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 1, alignItems: 'stretch' }}>
       <Box sx={{ flex: "1 1 65%", minWidth: 300 }}>
         {error && (
           <Box sx={{ py: 2 }}>
@@ -106,7 +106,7 @@ const SummaryCards = () => {
                   padding: 1.5,
                   gap: 2,
                   cursor: 'pointer',
-                  backgroundColor: "transparent",
+                  backgroundColor: "#ffffff",
                   boxShadow:
                     "rgba(0, 0, 0, 0.02) 0px 1px 3px 0px, rgba(27, 31, 35, 0.15) 0px 0px 0px 1px",
                   borderRadius: 2,

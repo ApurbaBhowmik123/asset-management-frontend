@@ -45,7 +45,7 @@ const Dashboard = () => {
   const [employeesData, setEmployeesData] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
   const [employeesGlobalFilter, setEmployeesGlobalFilter] = useState("");
-  const [employeesPagination, setEmployeesPagination] = useState({ pageIndex: 0, pageSize: 5});
+  const [employeesPagination, setEmployeesPagination] = useState({ pageIndex: 0, pageSize: 5 });
   const [employeesSorting, setEmployeesSorting] = useState([]);
   const [employeesTotalRows, setEmployeesTotalRows] = useState(0);
   const [employeesTotalPages, setEmployeesTotalPages] = useState(0);
@@ -223,13 +223,13 @@ const Dashboard = () => {
       sx: { width: "100%", overflowX: "auto" },
     },
     renderBottomToolbarCustomActions: () => (
-    <Typography
-      variant="body2"
-      sx={{ ml: 2, fontWeight: 500 }}
-    >
-      Total Rows: {employeesTotalRows}
-    </Typography>
-  ),
+      <Typography
+        variant="body2"
+        sx={{ ml: 2, fontWeight: 500 }}
+      >
+        Total Rows: {employeesTotalRows}
+      </Typography>
+    ),
     renderTopToolbarCustomActions: ({ table }) => {
       const selectedRows = table.getSelectedRowModel().rows;
       return (
@@ -278,9 +278,9 @@ const Dashboard = () => {
             </Button>
           )}
         </Box>
-        
+
       );
-      
+
     },
   });
 
@@ -349,7 +349,7 @@ const Dashboard = () => {
           <TotalProducts />
           <ProductUsageCharts />
 
-          <Card sx={{ mt: 4 }}>
+          <Card sx={{ mt: 1 }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h6" display="flex" alignItems="center">

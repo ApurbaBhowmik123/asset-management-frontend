@@ -173,7 +173,7 @@ const ProductUsageCharts = ({ isMobile }) => {
                   Top 10 Used Products
                 </Typography>
               </Box>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={usedProductsData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" hide />
@@ -200,7 +200,7 @@ const ProductUsageCharts = ({ isMobile }) => {
                   Top 10 Unused Products
                 </Typography>
               </Box>
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={unusedProductsData} barCategoryGap={20}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" hide />
@@ -242,7 +242,71 @@ const ProductUsageCharts = ({ isMobile }) => {
             </CardContent>
           </Card>
         </div>
+
+        <div style={{ flex: 1 }}>
+          <Box sx={{ flex: 1 }}>
+            <Card>
+              <CardContent>
+                <Box display="flex" alignItems="center" gap={1} mb={2}>
+                  <Typography variant="h6">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <img src={Icon2} alt="icon" style={{ marginRight: 8 }} />
+                      Low Stock Products
+                    </Box>
+                  </Typography>
+                </Box>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={lowStockProducts} barCategoryGap={20}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" hide />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <Tooltip content={<LowStockTooltip />} />
+                    <Bar dataKey={(data) => getBarValue(data.value, data.msq)} radius={[4, 4, 0, 0]} barSize={25}>
+                      {lowStockProducts.map((entry, index) => {
+                        const severity = entry.value / entry.msq;
+                        let fillColor = '#DB3027';
+                        return <Cell key={`cell-low-${index}`} fill={fillColor} />;
+                      })}
+
+
+                      <LabelList
+                        dataKey="value"
+                        position="inside"
+                        fill="#fff"
+                        fontSize={12}
+                        fontWeight="bold"
+                      />
+
+
+
+                      <LabelList
+                        dataKey="displayName"
+                        position="right"
+                        content={({ x, y, width, height, value }) => (
+                          <text
+                            x={x + width + 5}
+                            y={y + height / 2}
+                            dy={4}
+                            textAnchor="start"
+                            fill="#333"
+                            fontSize={12}
+                            transform={`rotate(-90, ${x + width + 10}, ${y + height / 2})`}
+
+                          >
+                            {value}
+                          </text>
+                        )}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </Box>
+        </div>
       </div>
+
+
 
       <Box
         sx={{
@@ -252,67 +316,9 @@ const ProductUsageCharts = ({ isMobile }) => {
           mt: 4,
         }}
       >
-        <Box sx={{ flex: 1 }}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <Typography variant="h6">
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <img src={Icon2} alt="icon" style={{ marginRight: 8 }} />
-                    Low Stock Products
-                  </Box>
-                </Typography>
-              </Box>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={lowStockProducts} barCategoryGap={20}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" hide />
-                  <YAxis axisLine={false} tickLine={false} />
-                  <Tooltip content={<LowStockTooltip />} />
-                  <Bar dataKey={(data) => getBarValue(data.value, data.msq)} radius={[4, 4, 0, 0]} barSize={25}>
-                    {lowStockProducts.map((entry, index) => {
-                      const severity = entry.value / entry.msq;
-                      let fillColor = '#DB3027';
-                      return <Cell key={`cell-low-${index}`} fill={fillColor} />;
-                    })}
 
 
-                       <LabelList
-                      dataKey="value"
-                      position="inside"
-                      fill="#fff"
-                      fontSize={12}
-                      fontWeight="bold"
-                    />
-
-
-
-                    <LabelList
-                      dataKey="displayName"
-                      position="right"
-                      content={({ x, y, width, height, value }) => (
-                        <text
-                          x={x + width + 5}
-                          y={y + height / 2}
-                          dy={4}
-                          textAnchor="start"
-                          fill="#333"
-                          fontSize={12}
-                          transform={`rotate(-90, ${x + width + 10}, ${y + height / 2})`}
-
-                        >
-                          {value}
-                        </text>
-                      )}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </Box>
-
-        <Box sx={{ flex: 1 }}>
+        {/* <Box sx={{ flex: 1 }}>
           <Card>
             <CardContent>
               <Box display="flex" alignItems="center" gap={1} mb={2}>
@@ -324,7 +330,6 @@ const ProductUsageCharts = ({ isMobile }) => {
                 </Typography>
               </Box>
               <ResponsiveContainer width="100%" height={300}>
-                {/* Use the pendingServiceProducts state here */}
                 <BarChart data={pendingServiceProducts} barCategoryGap={10}>
                   <CartesianGrid strokeDasharray='3 3'></CartesianGrid>
                   <XAxis dataKey="displayName" hide />
@@ -365,7 +370,7 @@ const ProductUsageCharts = ({ isMobile }) => {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </Box>
+        </Box> */}
       </Box>
     </>
   );

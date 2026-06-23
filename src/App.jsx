@@ -93,6 +93,9 @@ import Notification from "./Page/Notification/Notification";
 // Software
 import SoftwareName from "./Page/Software/SoftwareName";
 import SoftwareAssign from "./Page/Software/SoftwareAssign/SoftwareAssign";
+import SoftwareAssignList from "./Page/Software/SoftwareAssign/SoftwareAssignList";
+import UnassignSoftware from "./Page/Software/SoftwareAssign/UnassignSoftware";
+import UnassignSoftwareList from "./Page/Software/SoftwareAssign/UnassignSoftwareList";
 import SoftwareLog from "./Page/Software/Softwarelog/SoftwareLOG";
 import SoftwareNameList from "./Page/Software/SoftwareNameList";
 import NotificationDetails from "./Page/Notification/NotificationDetails";
@@ -234,6 +237,9 @@ const App = () => {
               <Route path="/software" element={<SoftwareName />} />
               <Route path="/software-list" element={<SoftwareNameList />} />
               <Route path="/software/software-assign" element={<SoftwareAssign />} />
+              <Route path="/software/software-assign-list" element={<SoftwareAssignList />} />
+              <Route path="/software/unassign/:id" element={<UnassignSoftware />} />
+              <Route path="/software/unassign-list" element={<UnassignSoftwareList />} />
               <Route path="/software/software-log" element={<SoftwareLog />} />
             </Route>
           </Route>

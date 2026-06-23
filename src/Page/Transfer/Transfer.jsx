@@ -25,7 +25,7 @@ import { mkConfig, generateCsv, download } from "export-to-csv";
 import { useParams, useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import megathermLogo from "../../assets/Sidebarimages/Layer 1 1.jpeg";
+import megathermLogo from "../../assets/Sidebarimages/Layer 1 1.png";
 import { baseUrl } from "../Api";
 import { megathermLogoBase64 } from "../../assets/Sidebarimages/logoBase64";
 
@@ -229,19 +229,22 @@ const Transfer = () => {
       size: 140,
     }),
     columnHelper.accessor("productName", { header: "Product Name", size: 150 }),
-    columnHelper.accessor("location", { header: "Location", size: 200,
-       Cell: ({ cell }) => (
+    columnHelper.accessor("location", {
+      header: "Location", size: 200,
+      Cell: ({ cell }) => (
         <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
           {cell.getValue()}
         </div>
       ),
-     }),
-    columnHelper.accessor("sourceUnit", { header: "Source Unit", size: 120,
-       Cell: ({ cell }) => (
+    }),
+    columnHelper.accessor("sourceUnit", {
+      header: "Source Unit", size: 120,
+      Cell: ({ cell }) => (
         <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
           {cell.getValue()}
         </div>
-      ), }),
+      ),
+    }),
     columnHelper.accessor("destinationUnit", {
       header: "Destination Unit",
       size: 150,
@@ -254,7 +257,7 @@ const Transfer = () => {
       header: "Destination Location",
       size: 140,
     }),
-    
+
   ];
 
   const handleExport = (rows) => {

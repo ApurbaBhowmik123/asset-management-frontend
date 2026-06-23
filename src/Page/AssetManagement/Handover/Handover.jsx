@@ -25,9 +25,9 @@ import { mkConfig, generateCsv, download } from "export-to-csv";
 import { useParams, useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import megathermLogo from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
+import megathermLogo from "../../../assets/Sidebarimages/Layer 1 1.png";
 import { baseUrl } from '../../Api';
-// import { megathermLogoBase64 } from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
+// import { megathermLogoBase64 } from "../../../assets/Sidebarimages/Layer 1 1.png";
 
 const csvConfig = mkConfig({ useKeysAsHeaders: true });
 
@@ -66,15 +66,15 @@ const Handover = () => {
         const result = await response.json();
         if (result.status) {
           setRowData(result.data.data);
-          setData(result.data.data.products.map(product => ({
+          setData([{
             serialId: result.data.data.assignedId,
-            serialNumber: product?.serialNo1 || 'N/A',
-            productName: product?.name || 'N/A',
-            category: product?.category?.name || 'N/A',
-            subCategory: product?.subcategory?.name || 'N/A',
-            location: product?.grDetails?.unit?.name || 'N/A',
-            inventorProductId: product.inventorProductId
-          })));
+            serialNumber: result.data.data.products.map(p => p.serialNo1 || p.serialNo2 || 'N/A').join(', '),
+            productName: result.data.data.products.map(p => p.grInventoryProduct?.product?.name || p.name || 'N/A').join(', '),
+            category: result.data.data.products.map(p => p.grInventoryProduct?.product?.category?.name || p.category?.name || 'N/A').join(', '),
+            subCategory: result.data.data.products.map(p => p.grInventoryProduct?.product?.subcategory?.name || p.subcategory?.name || 'N/A').join(', '),
+            location: result.data.data.products.map(p => p.grDetails?.unit?.name || 'N/A').join(', '),
+            inventorProductId: result.data.data.products.map(p => p.inventorProductId).join(', ')
+          }]);
         } else {
           setIsError(true);
         }
@@ -375,7 +375,7 @@ const Handover = () => {
           <Button
             className="Global-Button2"
             onClick={handleCompleteHandover}
-            disabled={isSubmitting || !uploadedFile}
+            disabled={isSubmitting || !uploadedFile || !table.getIsSomeRowsSelected()}
           >
             {isSubmitting ? (
               <>

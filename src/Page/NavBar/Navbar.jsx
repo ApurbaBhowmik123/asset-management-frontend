@@ -17,7 +17,7 @@ const Navbar = ({ toggleSidebar }) => {
   const [loading, setLoading] = useState(false);
   const [userRole, setUserRole] = useState("");
   useEffect(() => {
-    
+
     try {
       const userData = JSON.parse(localStorage.getItem("profile"));
       if (userData?.data?.role) {
@@ -136,30 +136,31 @@ const Navbar = ({ toggleSidebar }) => {
     fetchNotifications();
   }, []);
 
-const markNotificationsAsRead = async (ids) => {
-  try {
-    const token = localStorage.getItem("token");
-    await axios.put(
-      `${baseUrl}/ntf/notification/mark-as-read`,
-      { ids },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  const markNotificationsAsRead = async (ids) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `${baseUrl}/ntf/notification/mark-as-read`,
+        { ids },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
 
-    setNotifications((prev) =>
-      prev.map((n) => (ids.includes(n.id) ? { ...n, isRead: true } : n))
-    );
-  } catch (err) {
-    console.error("Failed to mark notifications as read:", err);
-  }
-};
+      setNotifications((prev) =>
+        prev.map((n) => (ids.includes(n.id) ? { ...n, isRead: true } : n))
+      );
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
+  };
 
   return (
     <div
       style={{
-        backgroundColor: "#fff",
-        padding: "12px 24px",
-        borderBottom: "1px solid #f1f1f1",
+        backgroundColor: "#100b31",
+        color: "#ffffff",
+        padding: "6px 24px",
+        // borderBottom: "1px solid #f1f1f1",
       }}
     >
       <div
@@ -172,12 +173,12 @@ const markNotificationsAsRead = async (ids) => {
         {/* Left Section */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button
-            style={{ background: "none", border: "none", cursor: "pointer" }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#ffffff" }}
             onClick={toggleSidebar}
           >
-            <Menu size={18} color="#6b7280" />
+            <Menu size={18} />
           </button>
-          <span style={{ fontWeight: 600, fontSize: "16px", color: "#1f2937" }}>
+          <span style={{ fontWeight: 600, fontSize: "16px" }}>
             {currentTitle}
           </span>
         </div>
@@ -201,14 +202,14 @@ const markNotificationsAsRead = async (ids) => {
                 cursor: "pointer",
               }}
               onClick={() => {
-    
+
 
                 setShowNotifications((prev) => !prev);
                 setShowProfile(false);
               }}
             >
-              <Bell size={18} color="#6b7280" />
-              {notifications.length > 0 && (
+              <Bell size={18} color="#ffde24" />
+              {notifications.length > 0 ? (
                 <div
                   style={{
                     position: "absolute",
@@ -227,7 +228,27 @@ const markNotificationsAsRead = async (ids) => {
                 >
                   {notifications.length}
                 </div>
-              )}
+              )
+                :
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "0px",
+                    right: "0px",
+                    width: "14px",
+                    height: "14px",
+                    borderRadius: "50%",
+                    background: "#f4e808",
+                    fontSize: "6px",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {notifications.length}
+                </div>
+              }
             </button>
 
             {showNotifications && (
@@ -278,7 +299,7 @@ const markNotificationsAsRead = async (ids) => {
                   ) : notifications.length > 0 ? (
                     notifications.map((n) => (
                       <div
-                      
+
                         key={n.id}
                         onClick={() => {
                           const url = n.transactionLink || "";
@@ -286,9 +307,9 @@ const markNotificationsAsRead = async (ids) => {
                             /^https?:\/\/[^/]+/,
                             ""
                           );
-                      if (!n.isRead) {
-                              markNotificationsAsRead([n.id]); 
-                            }
+                          if (!n.isRead) {
+                            markNotificationsAsRead([n.id]);
+                          }
 
                           navigate(relativePath);
                         }}
@@ -301,8 +322,8 @@ const markNotificationsAsRead = async (ids) => {
                           (e.currentTarget.style.backgroundColor = "#f9fafb")
                         }
                         onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor =
-                            "transparent")
+                        (e.currentTarget.style.backgroundColor =
+                          "transparent")
                         }
                       >
                         <p
@@ -314,7 +335,7 @@ const markNotificationsAsRead = async (ids) => {
                         >
                           {n.text}
                         </p>
-                        <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                        <span style={{ fontSize: "12px", color: "#ffffff" }}>
                           {new Date(n.createdAt).toLocaleString("en-GB", {
                             day: "2-digit",
                             month: "2-digit",

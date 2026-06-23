@@ -73,9 +73,21 @@ const UnassignList = () => {
             const json = await res.json();
 
             if (json.status) {
-                setData(json.data.data);
-                setAllData(json.data.data); // Store all data for client-side filtering
-                setRowCount(json.data.total);
+                // Group by assignedId
+                const groupedDataMap = new Map();
+                json.data.data.forEach(item => {
+                    const id = item.assignedId;
+                    if (!groupedDataMap.has(id)) {
+                        groupedDataMap.set(id, { ...item, _group: [item], assetCount: 1 });
+                    } else {
+                        groupedDataMap.get(id)._group.push(item);
+                        groupedDataMap.get(id).assetCount++;
+                    }
+                });
+                const groupedData = Array.from(groupedDataMap.values());
+                setData(groupedData);
+                setAllData(groupedData); // Store all data for client-side filtering
+                setRowCount(groupedData.length);
                 setIsError(false);
             } else {
                 setIsError(true);
@@ -139,17 +151,19 @@ const UnassignList = () => {
         columnHelper.accessor('inventoryProductDetail.uuid', {
             header: 'Asset ID',
             size: 120,
-            Cell: ({ cell }) => (
-                <Box
-                    sx={{
-                        whiteSpace: "normal",
-                        wordBreak: "break-word",
-                        lineHeight: 1.2,
-                    }}
-                >
-                    {cell.getValue() || 'N/A'}
+            Cell: ({ row }) => (
+                <Box sx={{ whiteSpace: "normal", wordBreak: "break-word", lineHeight: 1.2 }}>
+                    {row.original._group.map(g => g.inventoryProductDetail?.uuid || 'N/A').join(', ')}
                 </Box>
             ),
+        }),
+        columnHelper.accessor('inventoryProductDetail.grInventoryProduct.product.name', {
+            header: 'Product Name',
+            size: 150,
+            Cell: ({ row }) => {
+                const names = row.original._group.map(g => g.inventoryProductDetail?.grInventoryProduct?.product?.name || 'N/A');
+                return names.join(', ');
+            }
         }),
 
         // columnHelper.accessor('status', {

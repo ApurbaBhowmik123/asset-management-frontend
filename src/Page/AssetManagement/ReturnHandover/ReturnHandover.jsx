@@ -28,9 +28,9 @@ import { mkConfig, generateCsv, download } from "export-to-csv";
 import { useParams, useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import megathermLogo from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
+import megathermLogo from "../../../assets/Sidebarimages/Layer 1 1.png";
 import { baseUrl } from '../../Api';
-// import { megathermLogoBase64 } from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
+// import { megathermLogoBase64 } from "../../../assets/Sidebarimages/Layer 1 1.png";
 
 const csvConfig = mkConfig({ useKeysAsHeaders: true });
 
@@ -75,16 +75,16 @@ const ReturnHandover = () => {
             initialStatuses[p.inventorProductId] = { status: 'Complete', remark: '' };
           });
           setAssetStatuses(initialStatuses);
-          
-          setData(result.data.data.products.map(product => ({
+
+          setData([{
             serialId: result.data.data.assignedId,
-            serialNumber: product?.serialNo1 || 'N/A',
-            productName: product?.name || 'N/A',
-            category: product?.category?.name || 'N/A',
-            subCategory: product?.subcategory?.name || 'N/A',
-            location: product?.grDetails?.unit?.name || 'N/A',
-            inventorProductId: product.inventorProductId
-          })));
+            serialNumber: result.data.data.products.map(p => p.serialNo1 || p.serialNo2 || 'N/A').join(', '),
+            productName: result.data.data.products.map(p => p.grInventoryProduct?.product?.name || p.name || 'N/A').join(', '),
+            category: result.data.data.products.map(p => p.grInventoryProduct?.product?.category?.name || p.category?.name || 'N/A').join(', '),
+            subCategory: result.data.data.products.map(p => p.grInventoryProduct?.product?.subcategory?.name || p.subcategory?.name || 'N/A').join(', '),
+            location: result.data.data.products.map(p => p.grDetails?.unit?.name || 'N/A').join(', '),
+            inventorProductId: result.data.data.products.map(p => p.inventorProductId).join(', ')
+          }]);
         } else {
           setIsError(true);
         }
@@ -116,7 +116,7 @@ const ReturnHandover = () => {
           <Select
             size="small"
             value={assetStatuses[id]?.status || 'Complete'}
-            onChange={(e) => setAssetStatuses(prev => ({...prev, [id]: { ...(prev[id] || {}), status: e.target.value }}))}
+            onChange={(e) => setAssetStatuses(prev => ({ ...prev, [id]: { ...(prev[id] || {}), status: e.target.value } }))}
             sx={{ width: '100%', fontSize: '12px', height: '32px' }}
           >
             <MenuItem value="Complete">Complete</MenuItem>
@@ -136,7 +136,7 @@ const ReturnHandover = () => {
             size="small"
             placeholder="Add remark"
             value={assetStatuses[id]?.remark || ''}
-            onChange={(e) => setAssetStatuses(prev => ({...prev, [id]: { ...(prev[id] || {}), remark: e.target.value }}))}
+            onChange={(e) => setAssetStatuses(prev => ({ ...prev, [id]: { ...(prev[id] || {}), remark: e.target.value } }))}
             sx={{ width: '100%', '& .MuiInputBase-input': { fontSize: '12px', padding: '6px 8px' } }}
           />
         );
@@ -229,7 +229,7 @@ const ReturnHandover = () => {
     pdf.save(`Asset_Allocation_Form_${rowData.assignedTo.user.name.replace(/\s+/g, '_')}.pdf`);
   };
 
-    const handleCompleteReturnHandover = async () => {
+  const handleCompleteReturnHandover = async () => {
     setIsSubmitting(true);
     try {
       // 1. Generate PDF
@@ -237,7 +237,7 @@ const ReturnHandover = () => {
       // We temporarily make it visible for html2canvas
       const originalLeft = input.style.left;
       const originalPosition = input.style.position;
-      
+
       input.style.left = "0px";
       input.style.position = "absolute";
       input.style.zIndex = "-1"; // Keep it behind
@@ -260,7 +260,7 @@ const ReturnHandover = () => {
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      
+
       // Convert PDF to File object
       const pdfBlob = pdf.output('blob');
       const generatedFile = new File([pdfBlob], `Return_Handover_${rowData.assignedTo.user.name.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
@@ -394,7 +394,7 @@ const ReturnHandover = () => {
           <Button
             className="Global-Button2"
             onClick={handleCompleteReturnHandover}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !table.getIsSomeRowsSelected()}
           >
             {isSubmitting ? (
               <>

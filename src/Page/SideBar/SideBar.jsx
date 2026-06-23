@@ -15,7 +15,7 @@ import ArrowIcon from "../../assets/Sidebarimages/Vector22.png";
 import { useNavigate } from "react-router-dom";
 
 // Icons
-import logo from "../../assets/Sidebarimages/Layer 1 1.jpeg";
+import logo from "../../assets/Sidebarimages/Layer 1 1.png";
 import dashboardIcon from "../../assets/Sidebarimages/Vector (8).png";
 import dashboardIcon1 from "../../assets/Sidebarimages/Vector (15).png";
 import setupIcon from "../../assets/Sidebarimages/Group@3x.png";
@@ -103,14 +103,14 @@ const Sidebar = ({
           }
         }}
         sx={{
-          backgroundColor: isSelected ? "#0000ff" : "transparent",
+          backgroundColor: isSelected ? "#00005e" : "transparent",
           borderRadius: "8px",
           mx: 1,
           my: 0.5,
           pl: 2,
           minHeight: 44,
           "&:hover": {
-            backgroundColor: "#0000ff",
+            backgroundColor: "#00005e",
           },
         }}
       >
@@ -145,7 +145,7 @@ const Sidebar = ({
   const renderSubItemList = (items) => (
     <Box
       sx={{
-        borderLeft: "2px solid #0000ff",
+        borderLeft: "2px solid #00005e",
         ml: 3.8,
         pl: 1,
         overflowX: "auto",
@@ -179,7 +179,7 @@ const Sidebar = ({
               whiteSpace: "nowrap",
               backgroundColor: "transparent",
               "&:hover": {
-                backgroundColor: "#0000ff",
+                backgroundColor: "#00005e",
               },
             }}
           >
@@ -211,7 +211,7 @@ const Sidebar = ({
         pb={0.5}
         variant="caption"
         sx={{
-          color: "#f2f1f7", // modern slate blue/gray
+          color: "#fffef1", // modern slate blue/gray
           fontWeight: "700",
           letterSpacing: "0.08em",
           fontSize: "0.75rem",
@@ -237,7 +237,7 @@ const Sidebar = ({
         [`& .MuiDrawer-paper`]: {
           width: 250,
           boxSizing: "border-box",
-          backgroundColor: "#07001d",
+          backgroundColor: "#100b31",
           padding: "10px 0",
           display: "flex",
           flexDirection: "column",
@@ -248,24 +248,24 @@ const Sidebar = ({
       <Box px={2} pb={1.5} pt={0.5}>
         <Box
           onClick={handleClick}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "50px",
-            backgroundColor: "#f8fafc",
-            borderRadius: "12px",
-            border: "1px solid #f1f5f9",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              transform: "translateY(-1px)",
-              boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
-            },
-            cursor: "pointer",
-          }}
+        // sx={{
+        //   display: "flex",
+        //   alignItems: "center",
+        //   justifyContent: "center",
+        //   height: "50px",
+        //   backgroundColor: "#f8fafc",
+        //   borderRadius: "12px",
+        //   border: "1px solid #f1f5f9",
+        //   boxShadow: "0 1px 3px rgba(0,0,0,0.02)",
+        //   transition: "all 0.2s ease",
+        //   "&:hover": {
+        //     transform: "translateY(-1px)",
+        //     boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03)",
+        //   },
+        //   cursor: "pointer",
+        // }}
         >
-          <img src={logo} alt="Logo" style={{ maxHeight: "35px", maxWidth: "90%" }} />
+          <img src={logo} alt="Logo" style={{ maxHeight: "75px", maxWidth: "100%" }} />
         </Box>
       </Box>
 
@@ -388,6 +388,17 @@ const Sidebar = ({
                     path: "/software/software-assign",
                     requiredPermission: "create-software"
                   },
+                  {
+                    label: "Software Assign List",
+                    path: "/software/software-assign-list",
+                    requiredPermission: "read-software"
+                  },
+                  {
+                    label: "Software Unassign List",
+                    path: "/software/unassign-list",
+                    requiredPermission: "read-software"
+                  },
+
                   {
                     label: "Software Log",
                     path: "/software/software-log",

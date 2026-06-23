@@ -100,7 +100,7 @@ export const TotalProducts = () => {
   //   return <Typography>No data to display.</Typography>;
   // }
 
-    if (isLoading) {
+  if (isLoading) {
     return <Typography>Loading chart data...</Typography>;
   }
 
@@ -114,7 +114,7 @@ export const TotalProducts = () => {
 
   return (
     <>
-      <Card sx={{ mb: 4 }}>
+      <Card sx={{ mb: 1 }}>
         <CardContent>
           <Box
             display="flex"
@@ -134,7 +134,7 @@ export const TotalProducts = () => {
             </Box>
           </Box>
 
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart
               data={chartData}
               margin={{ top: 10, right: 150, left: 20, bottom: 5 }}

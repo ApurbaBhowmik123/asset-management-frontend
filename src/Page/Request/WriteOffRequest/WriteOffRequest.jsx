@@ -29,7 +29,7 @@ import ViewIcon from "../../../assets/EmployeeImages/Group (2).png";
 import { baseUrl } from "../../Api";
 import axios from "axios";
 import { dateTimeHelper } from "../../../Helper/DateTimeHelper/DateTimeHelper";
-import companyLogo from "../../../assets/Sidebarimages/Layer 1 1.jpeg";
+import companyLogo from "../../../assets/Sidebarimages/Layer 1 1.png";
 // CSV Config
 const csvConfig = mkConfig({
     fieldSeparator: ",",
@@ -638,27 +638,27 @@ const WriteOffRequest = () => {
         muiTableBodyRowProps: {
             sx: { "&:nth-of-type(odd)": { backgroundColor: "#fafafa" } },
         },
-         muiTableContainerProps: {
-      sx: {
-        width: "100%",
-        overflowX: "auto",
-        maxWidth: "100%",
-        "&::-webkit-scrollbar": {
-          height: "8px",
-          width: "8px",
+        muiTableContainerProps: {
+            sx: {
+                width: "100%",
+                overflowX: "auto",
+                maxWidth: "100%",
+                "&::-webkit-scrollbar": {
+                    height: "8px",
+                    width: "8px",
+                },
+                "&::-webkit-scrollbar-track": {
+                    background: "#f1f1f1",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                    backgroundColor: "#888",
+                    borderRadius: "8px",
+                },
+                "&::-webkit-scrollbar-thumb:hover": {
+                    background: "#555",
+                },
+            },
         },
-        "&::-webkit-scrollbar-track": {
-          background: "#f1f1f1",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          backgroundColor: "#888",
-          borderRadius: "8px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          background: "#555",
-        },
-      },
-    },
         renderTopToolbarCustomActions: ({ table }) => (
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                 <Button
@@ -754,7 +754,7 @@ const WriteOffRequest = () => {
                             onChange={(e) => setPreparedBy(e.target.value)}
                             variant="standard"
                             disableUnderline
-                            sx={{ backgroundColor: "#f9f9f9", borderRadius: 1, px: 1, border:"1px solid black" }}
+                            sx={{ backgroundColor: "#f9f9f9", borderRadius: 1, px: 1, border: "1px solid black" }}
                         >
                             {userList.map((user) => (
                                 <MenuItem key={user.id} value={user.name}>
@@ -772,7 +772,7 @@ const WriteOffRequest = () => {
                             onChange={(e) => setReviewedBy(e.target.value)}
                             variant="standard"
                             disableUnderline
-                            sx={{ backgroundColor: "#f9f9f9", borderRadius: 1, px: 1, border:"1px solid black"}}
+                            sx={{ backgroundColor: "#f9f9f9", borderRadius: 1, px: 1, border: "1px solid black" }}
                         >
                             {userList.map((user) => (
                                 <MenuItem key={user.id} value={user.name}>
@@ -790,7 +790,7 @@ const WriteOffRequest = () => {
                             onChange={(e) => setApprovedBy(e.target.value)}
                             variant="standard"
                             disableUnderline
-                            sx={{ backgroundColor: "#f9f9f9", borderRadius: 1, px: 1, border:"1px solid black" }}
+                            sx={{ backgroundColor: "#f9f9f9", borderRadius: 1, px: 1, border: "1px solid black" }}
                         >
                             {userList.map((user) => (
                                 <MenuItem key={user.id} value={user.name}>
