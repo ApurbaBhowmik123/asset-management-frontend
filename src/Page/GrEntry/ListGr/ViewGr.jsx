@@ -185,6 +185,7 @@ const ViewGr = () => {
   const [grDetails, setGrDetails] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [untaggedProducts, setUntaggedProducts] = useState([]);
+  const [softwareProducts, setSoftwareProducts] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   
   const navigate = useNavigate();
@@ -217,8 +218,11 @@ const ViewGr = () => {
           untaggedDetails,
           untaggedCount: untaggedDetails.length
         };
-      }).filter(ip => ip.untaggedCount > 0);
+      }).filter(ip => ip.untaggedCount > 0 && ip.categoryId);
       setUntaggedProducts(untaggedProductsList);
+
+      const softwareList = res.data.data.inventoryProducts.filter(ip => ip.softwareId);
+      setSoftwareProducts(softwareList);
     } catch (error) {
       console.error("error fetching GR details", error);
       setSnackbar({ open: true, message: "Error fetching GR details", severity: "error" });
@@ -232,6 +236,13 @@ const ViewGr = () => {
     columnHelper.accessor("brand.name", { header: "Brand", size: 150 }),
     columnHelper.accessor("quantity", { header: "Total Quantity", size: 120 }),
     columnHelper.accessor("untaggedCount", { header: "Untagged Quantity", size: 120 })
+  ];
+
+  const softwareColumns = [
+    columnHelper.accessor("software.name", { header: "Software", size: 150 }),
+    columnHelper.accessor("quantity", { header: "Added Quantity", size: 120 }),
+    columnHelper.accessor("ratePerPiece", { header: "Rate", size: 120 }),
+    columnHelper.accessor("totalAmount", { header: "Net Amount", size: 120 })
   ];
 
   const taggedColumns = [

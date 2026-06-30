@@ -17,13 +17,19 @@ import { useEffect, useState } from "react";
 import Deleteicon1 from "../../assets/EmployeeImages/Vector (1).png";
 import { createMRTColumnHelper, MaterialReactTable } from "material-react-table";
 import { baseUrl } from "../Api";
+import SoftwareName from "../Software/SoftwareName";
+import { Dialog, DialogContent } from "@mui/material";
 import { dateTimeHelper } from "../../Helper/DateTimeHelper/DateTimeHelper";
 import { CustomTextField } from "../../utils/CustomTextField";
 import axios from "axios";
 
 const columnHelper = createMRTColumnHelper();
 const columns = [
-  columnHelper.accessor("categoryName", { header: "Asset Reference", size: 150 }),
+  columnHelper.accessor("categoryName", {
+    header: "Asset Reference / Software",
+    size: 150,
+    Cell: ({ row }) => row.original.softwareName || row.original.categoryName
+  }),
   columnHelper.accessor("assetType", { header: "Asset Type", size: 100 }),
   columnHelper.accessor("trackingType", { header: "Tracking", size: 100 }),
   columnHelper.accessor("brandName", { header: "Brand", size: 120 }),
@@ -72,7 +78,7 @@ const CreateGr = () => {
     vendor: "", unit: "", location: "", description: "",
   });
   const [currentItem, setCurrentItem] = useState({
-    assetType: "", trackingType: "", categoryId: "", brandId: "", quantity: "", rate: "", tax: 18,
+    assetType: "", trackingType: "", categoryId: "", softwareId: "", brandId: "", quantity: "", rate: "", tax: 18,
   });
   const [addedItems, setAddedItems] = useState([]);
   
@@ -81,6 +87,8 @@ const CreateGr = () => {
   const [locations, setLocations] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [softwares, setSoftwares] = useState([]);
+  const [showSoftwareModal, setShowSoftwareModal] = useState(false);
   
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "info" });
   const [errors, setErrors] = useState({});
@@ -90,17 +98,26 @@ const CreateGr = () => {
     fetchDropdowns();
   }, []);
 
+  const fetchSoftwaresOnly = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const softRes = await axios.get(`${baseUrl}/software/list`, { headers: { Authorization: `Bearer ${token}` } });
+      setSoftwares(extractArray(softRes));
+    } catch (e) {}
+  };
+
   const fetchDropdowns = async () => {
     try {
       const token = localStorage.getItem("token");
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [venRes, unitRes, locRes, catRes, brandRes] = await Promise.all([
+      const [venRes, unitRes, locRes, catRes, brandRes, softRes] = await Promise.all([
         axios.get(`${baseUrl}/super-admin/vendors`, { headers }),
         axios.get(`${baseUrl}/super-admin/units`, { headers }),
         axios.get(`${baseUrl}/super-admin/locations`, { headers }),
         axios.get(`${baseUrl}/catalog/categories`, { headers }),
         axios.get(`${baseUrl}/super-admin/brands`, { headers }),
+        axios.get(`${baseUrl}/software/list`, { headers }),
       ]);
       
       setVendors(extractArray(venRes));
@@ -108,6 +125,7 @@ const CreateGr = () => {
       setLocations(extractArray(locRes));
       setCategories(extractArray(catRes));
       setBrands(extractArray(brandRes));
+      setSoftwares(extractArray(softRes));
     } catch (error) {
       console.error("Error fetching dropdowns", error);
     }
@@ -145,6 +163,8 @@ const CreateGr = () => {
 
     const newItem = {
       categoryId: currentItem.categoryId,
+      softwareId: currentItem.softwareId,
+      softwareName: softwares.find(s => s.id === currentItem.softwareId)?.name,
       categoryName: catObj?.name,
       assetType: catObj?.assetType,
       trackingType: catObj?.trackingType,
@@ -159,7 +179,7 @@ const CreateGr = () => {
     };
 
     setAddedItems([...addedItems, newItem]);
-    setCurrentItem({ assetType: "", trackingType: "", categoryId: "", brandId: "", quantity: "", rate: "", tax: 18 });
+    setCurrentItem({ assetType: "", trackingType: "", categoryId: "", softwareId: "", brandId: "", quantity: "", rate: "", tax: 18 });
   };
 
   const handleDeleteRow = (index) => {
@@ -195,6 +215,7 @@ const CreateGr = () => {
         description: formData.description,
         products: addedItems.map(item => ({
           categoryId: item.categoryId,
+          softwareId: item.softwareId,
           brandId: item.brandId,
           quantity: Number(item.quantity),
           ratePerPiece: Number(item.rate),
@@ -304,15 +325,30 @@ const CreateGr = () => {
               </Select>
             </FormControl>
           </Box>
+          {currentItem.assetType !== "DIGITAL" && (
+            <Box>
+              <InputLabel sx={{ color: "black" }}>Tracking Type <span style={{ color: "red" }}>*</span></InputLabel>
+              <FormControl fullWidth size="small">
+                <Select value={currentItem.trackingType} onChange={e => handleCurrentItemChange("trackingType", e.target.value)} sx={textFieldStyles}>
+                  <MenuItem value="TRACKABLE">Trackable</MenuItem>
+                  <MenuItem value="NON_TRACKABLE">Non-Trackable</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+          {currentItem.assetType === "DIGITAL" ? (
           <Box>
-            <InputLabel sx={{ color: "black" }}>Tracking Type <span style={{ color: "red" }}>*</span></InputLabel>
-            <FormControl fullWidth size="small">
-              <Select value={currentItem.trackingType} onChange={e => handleCurrentItemChange("trackingType", e.target.value)} sx={textFieldStyles}>
-                <MenuItem value="TRACKABLE">Trackable</MenuItem>
-                <MenuItem value="NON_TRACKABLE">Non-Trackable</MenuItem>
-              </Select>
-            </FormControl>
+            <InputLabel sx={{ color: "black" }}>Asset Reference <span style={{ color: "red" }}>*</span></InputLabel>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <FormControl fullWidth size="small">
+                <Select value={currentItem.softwareId} onChange={e => handleCurrentItemChange("softwareId", e.target.value)} sx={textFieldStyles}>
+                  {softwares.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+              <Button variant="contained" size="small" onClick={() => setShowSoftwareModal(true)}>+ New</Button>
+            </Box>
           </Box>
+        ) : (
           <Box>
             <InputLabel sx={{ color: "black" }}>Asset Reference <span style={{ color: "red" }}>*</span></InputLabel>
             <FormControl fullWidth size="small">
@@ -321,14 +357,17 @@ const CreateGr = () => {
               </Select>
             </FormControl>
           </Box>
-          <Box>
-            <InputLabel sx={{ color: "black" }}>Brand <span style={{ color: "red" }}>*</span></InputLabel>
-            <FormControl fullWidth size="small">
-              <Select value={currentItem.brandId} onChange={e => handleCurrentItemChange("brandId", e.target.value)} sx={textFieldStyles}>
-                {brands.map(b => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
-              </Select>
-            </FormControl>
-          </Box>
+        )}
+          {currentItem.assetType !== "DIGITAL" && (
+            <Box>
+              <InputLabel sx={{ color: "black" }}>Brand <span style={{ color: "red" }}>*</span></InputLabel>
+              <FormControl fullWidth size="small">
+                <Select value={currentItem.brandId} onChange={e => handleCurrentItemChange("brandId", e.target.value)} sx={textFieldStyles}>
+                  {brands.map(b => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
           <Box>
             <InputLabel sx={{ color: "black" }}>Quantity <span style={{ color: "red" }}>*</span></InputLabel>
             <CustomTextField type="number" fullWidth size="small" value={currentItem.quantity} onChange={e => handleCurrentItemChange("quantity", e.target.value)} sx={textFieldStyles} />

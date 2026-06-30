@@ -86,13 +86,25 @@ const ListGr = () => {
       header: "Vendor",
       size: 200,
     }),
+    columnHelper.accessor("assetType", {
+      header: "Type",
+      size: 100,
+      Cell: ({ cell }) => {
+        const val = cell.getValue();
+        let color = "default";
+        if (val === "Software") color = "info";
+        if (val === "Asset") color = "success";
+        if (val === "Mixed") color = "warning";
+        return val && val !== "N/A" ? <Chip label={val} color={color} size="small" /> : "-";
+      }
+    }),
     columnHelper.display({
       id: "actions",
       header: "Actions",
       size: 150,
       Cell: ({ row }) => (
         <Box sx={{ display: "flex", gap: 0.5, alignItems: "center" }}>
-          {/* {taggedFilter === "false" && (
+          {taggedFilter === "false" && (
             <Button
               variant="contained"
               color="success"
@@ -115,7 +127,7 @@ const ListGr = () => {
             >
               Tag
             </Button>
-          )} */}
+          )}
           <IconButton
             onClick={() => handleGotoQRList(row?.original?.uuid)}
             color="primary"

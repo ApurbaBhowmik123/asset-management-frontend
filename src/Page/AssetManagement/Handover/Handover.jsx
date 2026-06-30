@@ -66,15 +66,16 @@ const Handover = () => {
         const result = await response.json();
         if (result.status) {
           setRowData(result.data.data);
-          setData([{
+          const mappedData = result.data.data.products.map(p => ({
             serialId: result.data.data.assignedId,
-            serialNumber: result.data.data.products.map(p => p.serialNo1 || p.serialNo2 || 'N/A').join(', '),
-            productName: result.data.data.products.map(p => p.grInventoryProduct?.product?.name || p.name || 'N/A').join(', '),
-            category: result.data.data.products.map(p => p.grInventoryProduct?.product?.category?.name || p.category?.name || 'N/A').join(', '),
-            subCategory: result.data.data.products.map(p => p.grInventoryProduct?.product?.subcategory?.name || p.subcategory?.name || 'N/A').join(', '),
-            location: result.data.data.products.map(p => p.grDetails?.unit?.name || 'N/A').join(', '),
-            inventorProductId: result.data.data.products.map(p => p.inventorProductId).join(', ')
-          }]);
+            serialNumber: p.serialNo1 || p.serialNo2 || 'N/A',
+            productName: p.grInventoryProduct?.product?.name || p.name || 'N/A',
+            category: p.grInventoryProduct?.product?.category?.name || p.category?.name || 'N/A',
+            subCategory: p.grInventoryProduct?.product?.subcategory?.name || p.subcategory?.name || 'N/A',
+            location: p.grDetails?.unit?.name || 'N/A',
+            inventorProductId: p.inventorProductId
+          }));
+          setData(mappedData);
         } else {
           setIsError(true);
         }
@@ -108,6 +109,7 @@ const Handover = () => {
     columns,
     data,
     enableRowSelection: true,
+    getRowId: (row) => row.inventorProductId,
     enableColumnResizing: false,
     columnResizeMode: "onChange",
     paginationDisplayMode: "pages",
@@ -198,8 +200,18 @@ const Handover = () => {
       const token = localStorage.getItem('token');
       const formData = new FormData();
 
-      // Get all inventory product IDs
-      const inventoryIds = rowData.products.map(product => product.inventorProductId);
+      // Get selected inventory product IDs
+      const selectedRows = table.getSelectedRowModel().rows;
+      if (selectedRows.length === 0) {
+        setSnackbar({
+          open: true,
+          message: 'Please select at least one item from the table to complete handover.',
+          severity: 'error'
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      const inventoryIds = selectedRows.map(row => row.original.inventorProductId);
       formData.append('inventoryIds', JSON.stringify(inventoryIds));
       formData.append('signaturedFile', uploadedFile);
       formData.append('assignmentId', id);
