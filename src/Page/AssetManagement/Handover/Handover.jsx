@@ -387,7 +387,7 @@ const Handover = () => {
           <Button
             className="Global-Button2"
             onClick={handleCompleteHandover}
-            disabled={isSubmitting || !uploadedFile || !table.getIsSomeRowsSelected()}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>

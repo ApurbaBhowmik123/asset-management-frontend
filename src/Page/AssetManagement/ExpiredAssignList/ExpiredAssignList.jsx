@@ -28,7 +28,7 @@ const csvConfig = mkConfig({
     filename: 'assignments_export_' + new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
 });
 
-const AssignList = () => {
+const ExpiredAssignList = () => {
     const [data, setData] = useState([]);
     const [allData, setAllData] = useState([]); // Store all data for client-side filtering
     const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +57,7 @@ const AssignList = () => {
             const search = globalFilter || '';
 
             const res = await fetch(
-                `${baseUrl}/asset-mng/asset/list?page=${pageIndex + 1}&limit=${pageSize}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${search}`, //&search=${search}
+                `${baseUrl}/asset-mng/asset/expired-list?page=${pageIndex + 1}&limit=${pageSize}&sortBy=${sortBy}&sortOrder=${sortOrder}&search=${search}`, //&search=${search}
                 {
                     method: 'GET',
                     headers: {
@@ -511,4 +511,4 @@ const AssignList = () => {
     );
 };
 
-export default AssignList;
+export default ExpiredAssignList;

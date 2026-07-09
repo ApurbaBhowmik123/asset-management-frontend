@@ -33,7 +33,7 @@ import { CustomTextField } from "../../../utils/CustomTextField";
 const AssignAsset = ({ onBack }) => {
     const [formData, setFormData] = useState({
         fromNo: "AAM-FROM-01",
-        allocationType: "Permanent", // New field: Permanent or Temporary
+        allocationType: "Temporary", // New field: Permanent or Temporary
         personOrPlace: "Person",
         personName: "",
         employeeName: "",
@@ -65,8 +65,10 @@ const AssignAsset = ({ onBack }) => {
     const [specFields, setSpecFields] = useState([]);
     const [specValueOptions, setSpecValueOptions] = useState({});
 
-    const [advFilters, setAdvFilters] = useState({ brandId: "", categoryId: "",
-        modelName: "", productId: "" });
+    const [advFilters, setAdvFilters] = useState({
+        brandId: "", categoryId: "",
+        modelName: "", productId: ""
+    });
     const [specsFilter, setSpecsFilter] = useState({});
     const [appliedFilters, setAppliedFilters] = useState({ brandId: "", categoryId: "", productId: "", specs: {} });
 
@@ -163,7 +165,7 @@ const AssignAsset = ({ onBack }) => {
         } else {
             setSpecFields([]);
             setSpecsFilter({});
-            
+
         }
     }, [advFilters.categoryId]);
 
@@ -458,7 +460,7 @@ const AssignAsset = ({ onBack }) => {
                 start_date: `${formData.startDate}T00:00:00Z`,
                 notes: formData.personOrPlace === "Department" ? formData.remark : formData.notes || "Asset assignment",
                 // Only include end date for permanent allocations
-                ...(formData.allocationType === "Permanent" && formData.endDate && { end_date: `${formData.endDate}T00:00:00Z` }),
+                ...(formData.allocationType === "Temporary" && formData.endDate && { end_date: `${formData.endDate}T00:00:00Z` }),
             };
 
             if (formData.personOrPlace === "Person") {
@@ -717,7 +719,7 @@ const AssignAsset = ({ onBack }) => {
         manualPagination: true,
         manualSorting: true,
         manualFiltering: true,
-        enableColumnFilters: false,   // 👈 disables filter by column
+        enableColumnFilters: false,   // disables filter by column
         onPaginationChange: setPagination,
         onSortingChange: setSorting,
         rowCount: totalCount,
@@ -881,7 +883,7 @@ const AssignAsset = ({ onBack }) => {
                                 value={formData.allocationType}
                                 onChange={handleChange}
                             >
-                                {["Permanent", "Temporary"].map((opt) => (
+                                {["Temporary", "Permanent"].map((opt) => (
                                     <MenuItem key={opt} value={opt} sx={{ fontSize: 11 }}>
                                         {opt}
                                     </MenuItem>
@@ -999,7 +1001,7 @@ const AssignAsset = ({ onBack }) => {
                                         <CustomTextField
                                             name={f}
                                             value={formData[f]}
-                                            
+
                                             InputProps={{
                                                 readOnly: true,
                                                 style: {
@@ -1042,7 +1044,7 @@ const AssignAsset = ({ onBack }) => {
                                         <CustomTextField
                                             name={f}
                                             value={formData[f]}
-                                            
+
                                             InputProps={{
                                                 readOnly: true,
                                                 style: {
@@ -1087,8 +1089,8 @@ const AssignAsset = ({ onBack }) => {
                         </div>
                     </div>
 
-                    {/* End Date - Only show for Permanent allocation */}
-                    {!isTemporaryAllocation && (
+                    {/* End Date - Only show for Temporary allocation */}
+                    {isTemporaryAllocation && (
                         <div style={columnStyle}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <Typography sx={{ minWidth: 100, }}>End Date :</Typography>

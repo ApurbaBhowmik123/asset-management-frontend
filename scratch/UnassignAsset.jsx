@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -20,10 +20,6 @@ import {
   createMRTColumnHelper,
 } from "material-react-table";
 import { mkConfig, generateCsv, download } from "export-to-csv";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import megathermLogo from "../../../assets/Sidebarimages/Layer 1 1.png";
 import AssignIcon from "../../../assets/EmployeeImages/assignment.png";
 import { baseUrl } from "../../Api";
 import { dateTimeHelper } from "../../../Helper/DateTimeHelper/DateTimeHelper";
@@ -50,10 +46,6 @@ const UnassignAsset = () => {
   const [dynamicColumns, setDynamicColumns] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
-  const [userAssets, setUserAssets] = useState([]);
-  const [assetConditions, setAssetConditions] = useState({});
-  const [uploadedFile, setUploadedFile] = useState(null);
-  const printRef = useRef();
   const [formData, setFormData] = useState({
     date: "",
     approvedBy: "",
@@ -164,12 +156,10 @@ const UnassignAsset = () => {
 
           const assignedUser = item.AssignProductDetails?.[0]?.assignedToUser;
           const assignmentId = item.AssignProductDetails?.[0]?.assignedId;
-          const userId = assignedUser?.id || null;
 
           return {
             id: item.id,
             uuid: item.uuid,
-            userId: userId,
             assignmentId: assignmentId || null,
             username: assignedUser?.name || "Location",
             assetType: item.grInventoryProduct?.product?.category?.name || "NA",
@@ -275,41 +265,14 @@ const UnassignAsset = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  const handleOpenModal = async (asset) => {
+  const handleOpenModal = (asset) => {
     setSelectedAsset(asset);
     setOpenModal(true);
-    setUserAssets([]);
-    setAssetConditions({});
-    setUploadedFile(null);
-    if (asset.userId) {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${baseUrl}/asset-mng/asset-unassign/${asset.userId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const json = await res.json();
-        if (json.status && json.data?.data) {
-          setUserAssets(json.data.data);
-          const initConds = {};
-          json.data.data.forEach(a => initConds[a.inventoryProductDetailId] = "Okay");
-          setAssetConditions(initConds);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    } else {
-        // location or single asset
-        setUserAssets([ { inventoryProductDetailId: asset.id, inventoryProductDetail: { uuid: asset.uuid, grInventoryProduct: { product: { name: asset.model } } }, assignedId: asset.assignmentId } ]);
-        setAssetConditions({ [asset.id]: "Okay" });
-    }
   };
 
   const handleCloseModal = () => {
     setOpenModal(false);
     setSelectedAsset(null);
-    setUserAssets([]);
-    setAssetConditions({});
-    setUploadedFile(null);
     setFormData({
       date: "",
       approvedBy: "",
@@ -342,23 +305,21 @@ const UnassignAsset = () => {
         return;
       }
 
-      const formDataPayload = new FormData();
-      formDataPayload.append('inventoryProductIds', JSON.stringify(userAssets.map(a => a.inventoryProductDetailId)));
-      formDataPayload.append('assignmentIds', JSON.stringify(userAssets.map(a => a.assignedId)));
-      formDataPayload.append('conditions', JSON.stringify(userAssets.map(a => assetConditions[a.inventoryProductDetailId] || 'Okay')));
-      formDataPayload.append('approvedDate', new Date(formData.date).toISOString());
-      formDataPayload.append('approvedBy', selectedUser.id.toString());
-      formDataPayload.append('remarks', formData.remark || "No remarks");
-      if (uploadedFile) {
-        formDataPayload.append('file', uploadedFile);
-      }
+      const payload = {
+        inventoryProductIds: selectedAsset._group ? selectedAsset._group.map(g => g.id) : [selectedAsset.id],
+        assignmentIds: [selectedAsset.assignmentId],
+        approvedDate: new Date(formData.date).toISOString(),
+        approvedBy: selectedUser.id.toString(),
+        remarks: formData.remark || "No remarks"
+      };
 
       const response = await fetch(`${baseUrl}/asset-mng/asset-unassign`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: formDataPayload
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -378,37 +339,6 @@ const UnassignAsset = () => {
       console.error("Error unassigning asset:", error);
       showSnackbar("Failed to unassign asset", "error");
     }
-  };
-
-  
-  const handleDownloadPDF = async () => {
-    const input = printRef.current;
-    
-    const originalLeft = input.style.left;
-    const originalPosition = input.style.position;
-
-    input.style.left = "0px";
-    input.style.position = "absolute";
-    input.style.zIndex = "-1";
-
-    const canvas = await html2canvas(input, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      logging: false,
-    });
-
-    input.style.left = originalLeft;
-    input.style.position = originalPosition;
-
-    const imgData = canvas.toDataURL("image/png");
-    const pdf = new jsPDF("p", "mm", "a4");
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`Unassign_${selectedAsset?.username?.replace(/\s+/g, '_') || 'Asset'}.pdf`);
   };
 
   const columnHelper = createMRTColumnHelper();
@@ -690,211 +620,122 @@ const UnassignAsset = () => {
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 700,
-            maxHeight: '90vh',
-            overflowY: 'auto',
+            width: 400,
             bgcolor: 'background.paper',
             boxShadow: 24,
             p: 4,
             borderRadius: 2,
           }}
         >
-          <Typography id="asset-modal-title" variant="h6" component="h2" gutterBottom className="line">
-            Bulk Unassign Assets
-          </Typography>
-          <Typography variant="subtitle1" sx={{ mb: 2 }}>
-            <strong>User:</strong> {selectedAsset?.username} <br/>
-            <strong>Email:</strong> {selectedAsset?.usedByEmail}
+          <Typography
+            id="asset-modal-title"
+            variant="h6"
+            component="h2"
+            gutterBottom
+            className="line"
+          >
+            Unassign Asset: {selectedAsset?.uuid}
           </Typography>
 
-          {/* Asset List with Condition */}
-          <Typography variant="subtitle2" sx={{ mb: 1, mt: 2 }}>Assigned Assets:</Typography>
-          <Box sx={{ border: '1px solid #ddd', borderRadius: 1, p: 2, mb: 2, maxHeight: 200, overflow: 'auto' }}>
-            {userAssets.map(a => (
-              <Box key={a.inventoryProductDetailId} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, borderBottom: '1px solid #eee', pb: 1 }}>
-                <Box>
-                  <Typography variant="body2"><strong>{a.inventoryProductDetail?.uuid}</strong></Typography>
-                  <Typography variant="caption">{a.inventoryProductDetail?.grInventoryProduct?.product?.name}</Typography>
-                </Box>
-                <Box>
-                  <label style={{ marginRight: 10 }}>
-                    <input type="radio" checked={assetConditions[a.inventoryProductDetailId] === "Okay"} onChange={() => setAssetConditions(prev => ({...prev, [a.inventoryProductDetailId]: "Okay"}))} /> Okay
-                  </label>
-                  <label>
-                    <input type="radio" checked={assetConditions[a.inventoryProductDetailId] === "Damage"} onChange={() => setAssetConditions(prev => ({...prev, [a.inventoryProductDetailId]: "Damage"}))} /> Damage
-                  </label>
-                </Box>
-              </Box>
-            ))}
-            {userAssets.length === 0 && <Typography variant="body2">No assets found.</Typography>}
-          </Box>
-
+          {/* Date & Approved By Row */}
           <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', marginTop: "10px" }}>
             <div style={{ flex: 1 }}>
-              <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Date</Typography>
-              <CustomTextField fullWidth type="date" name="date" InputLabelProps={{ shrink: true }} value={formData.date} onChange={handleInputChange} />
+              <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                Date
+              </Typography>
+              <CustomTextField
+                fullWidth
+                type="date"
+                name="date"
+                InputLabelProps={{ shrink: true }}
+                value={formData.date}
+                onChange={handleInputChange}
+                InputProps={{
+                  sx: {
+                    backgroundColor: '#f1f1ff',
+                    borderRadius: 1,
+                    '& fieldset': { border: 'none' },
+                  },
+                }}
+              />
             </div>
+
             <div style={{ flex: 1 }}>
-              <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Approved By</Typography>
-              <CustomTextField select fullWidth name="approvedBy" value={formData.approvedBy} onChange={handleInputChange} disabled={loadingUsers}>
+              <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                Approved By
+              </Typography>
+              <CustomTextField
+                select
+                fullWidth
+                name="approvedBy"
+                value={formData.approvedBy}
+                onChange={handleInputChange}
+                disabled={loadingUsers}
+                InputProps={{
+                  sx: {
+                    backgroundColor: '#f1f1ff',
+                    borderRadius: 1,
+                    '& fieldset': { border: 'none' },
+                  },
+                }}
+              >
                 {users.map((user) => (
-                  <MenuItem key={user.id} value={user.name}>{user.name}</MenuItem>
+                  <MenuItem key={user.id} value={user.name}>
+                    {user.name}
+                  </MenuItem>
                 ))}
               </CustomTextField>
             </div>
           </div>
 
+          {/* Remark Full Width */}
           <div style={{ marginBottom: '16px' }}>
-            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Remark</Typography>
-            <CustomTextField fullWidth name="remark" multiline rows={2} value={formData.remark} onChange={handleInputChange} />
+            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+              Remark
+            </Typography>
+            <CustomTextField
+              fullWidth
+              name="remark"
+              multiline
+              rows={4}
+              value={formData.remark}
+              onChange={handleInputChange}
+              InputProps={{
+                sx: {
+                  backgroundColor: '#f1f1ff',
+                  borderRadius: 1,
+                  '& fieldset': { border: 'none' },
+                },
+              }}
+            />
           </div>
-
-          {/* Document Section */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center', p: 2, bgcolor: '#f9f9f9', borderRadius: 1 }}>
-            <Button variant="outlined" onClick={handleDownloadPDF} startIcon={<FileDownloadIcon/>}>
-              Download Document
-            </Button>
-            <Box>
-              <Typography variant="caption" display="block">Upload Signed Document:</Typography>
-              <input type="file" accept="application/pdf,image/*" onChange={(e) => setUploadedFile(e.target.files[0])} />
-            </Box>
-          </Box>
 
           {/* Buttons */}
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button className="Global-Button3" onClick={handleCloseModal} sx={{ textTransform: 'none' }}>Cancel</Button>
-            <Button className="Global-Button2" onClick={handleSubmit} sx={{ textTransform: 'none' }} disabled={!uploadedFile}>Unassign All</Button>
+          <Box
+            sx={{
+              mt: 3,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 2,
+            }}
+          >
+            <Button
+              className="Global-Button3"
+              onClick={handleCloseModal}
+              sx={{ textTransform: 'none' }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="Global-Button2"
+              onClick={handleSubmit}
+              sx={{ textTransform: 'none' }}
+            >
+              Unassign Asset
+            </Button>
           </Box>
         </Box>
-      
       </Modal>
-
-      {/* PDF Template - Hidden but used for PDF generation */}
-      <div ref={printRef} style={{ width: "800px", padding: "20px", position: "absolute", left: "-9999px" }}>
-        <div style={{
-          maxWidth: "800px",
-          margin: "0 auto",
-          backgroundColor: "white",
-          border: "1px solid #000",
-          fontFamily: "Arial, sans-serif",
-          fontSize: "11px"
-        }}>
-          {/* Header */}
-          <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            padding: "10px",
-            borderBottom: "1px solid #000"
-          }}>
-            <div style={{ fontSize: "10px", lineHeight: "1.2" }}>
-              Megatherm <br />
-              Version 1.0
-            </div>
-            <div style={{ textAlign: "center", flexGrow: "1", margin: "0 20px" }}>
-              <h1 style={{ fontSize: "14px", fontWeight: "bold", marginBottom: "5px" }}>Asset Unassignment Form</h1>
-            </div>
-            <div style={{
-              width: "60px",
-              height: "60px",
-              border: "1px solid #000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#f0f0f0"
-            }}>
-              <div style={{ fontSize: "8px", textAlign: "center", color: "#666" }}><img src={megathermLogo} alt="Company Logo" style={{ maxWidth: "100%", maxHeight: "100%" }} /></div>
-            </div>
-          </div>
-
-          {/* Main Form Table */}
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px" }}>
-            <tbody>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#e8e8e8", width: "25%" }}>Employee Name:</td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", width: "75%" }}>{selectedAsset?.username}</td>
-              </tr>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#e8e8e8" }}>E-mail ID:</td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top" }}>{selectedAsset?.usedByEmail}</td>
-              </tr>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#d3d3d3", fontWeight: "bold", textAlign: "center" }} colSpan="2">Asset Details</td>
-              </tr>
-              <tr>
-                <td colSpan="2" style={{ border: "1px solid #000", padding: "3px 5px" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr style={{ backgroundColor: "#e8e8e8" }}>
-                        <th style={{ border: "1px solid #000", padding: "3px 5px" }}>Asset ID</th>
-                        <th style={{ border: "1px solid #000", padding: "3px 5px" }}>Description</th>
-                        <th style={{ border: "1px solid #000", padding: "3px 5px" }}>Condition</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {userAssets.map((a, index) => (
-                        <tr key={index}>
-                          <td style={{ border: "1px solid #000", padding: "3px 5px" }}>{a.inventoryProductDetail?.uuid || 'N/A'}</td>
-                          <td style={{ border: "1px solid #000", padding: "3px 5px" }}>{a.inventoryProductDetail?.grInventoryProduct?.product?.name || 'N/A'}</td>
-                          <td style={{ border: "1px solid #000", padding: "3px 5px" }}>{assetConditions[a.inventoryProductDetailId] || 'Okay'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#e8e8e8" }}>Reasons for Unassignment:</td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", height: "40px" }}>{formData.remark || '-'}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          {/* Signature Table */}
-          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px", fontSize: "11px" }}>
-            <tbody>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#d3d3d3", fontWeight: "bold", textAlign: "center" }}></td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#d3d3d3", fontWeight: "bold", textAlign: "center" }}>Name</td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#d3d3d3", fontWeight: "bold", textAlign: "center" }}>Signature</td>
-              </tr>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", height: "25px" }}></td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top" }}></td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top" }}></td>
-              </tr>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#d3d3d3", fontWeight: "bold" }}>Approver:</td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top" }}>{formData.approvedBy || 'Pending'}</td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top" }}></td>
-              </tr>
-              <tr>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top", backgroundColor: "#d3d3d3", fontWeight: "bold" }}>Date:</td>
-                <td style={{ border: "1px solid #000", padding: "3px 5px", verticalAlign: "top" }} colSpan="2">{formData.date ? new Date(formData.date).toLocaleDateString() : 'N/A'}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          {/* User Declaration Section */}
-          <div style={{ padding: "10px", borderTop: "1px solid #000", fontSize: "10px", lineHeight: "1.3" }}>
-            <div style={{ fontWeight: "bold", marginBottom: "8px" }}>Return Declaration</div>
-            <div style={{ marginBottom: "8px" }}>
-              I am returning the above-listed assets. I confirm that all data has been backed up and the condition stated above is accurate.
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "20px", fontSize: "10px" }}>
-              <span>Place:</span>
-              <div style={{ borderBottom: "1px solid #000", width: "200px", height: "20px", margin: "0 10px" }}></div>
-              <span>Date:</span>
-              <div style={{ borderBottom: "1px solid #000", width: "200px", height: "20px", margin: "0 10px" }}></div>
-              <span>Employee Signature:</span>
-              <div style={{ borderBottom: "1px solid #000", width: "200px", height: "20px", margin: "0 10px" }}></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      
 
       {/* Snackbar for notifications */}
       <Snackbar

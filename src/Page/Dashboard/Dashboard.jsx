@@ -16,6 +16,7 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import RecentTickets from './RecentTickets';
 import ProductUsageCharts from './ProductUsageChart';
 import SummaryCards from './SummaryCards';
+import DashboardAnalytics from './DashboardAnalytics';
 import { useNavigate } from "react-router-dom";
 import {
   MaterialReactTable,
@@ -346,7 +347,9 @@ const Dashboard = () => {
         // Everyone else (Super Admin, etc.)
         <>
           <SummaryCards />
-          <TotalProducts />
+          <Box sx={{ mb: 2 }}>
+            <DashboardAnalytics />
+          </Box>
           <ProductUsageCharts />
 
           <Card sx={{ mt: 1 }}>

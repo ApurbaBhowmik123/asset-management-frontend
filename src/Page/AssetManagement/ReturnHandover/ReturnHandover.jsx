@@ -48,6 +48,7 @@ const ReturnHandover = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [assetStatuses, setAssetStatuses] = useState({});
+  const [unassignDocumentUrl, setUnassignDocumentUrl] = useState(null);
 
   const profileStr = localStorage.getItem("profile");
   const userData = profileStr ? JSON.parse(profileStr)?.data : null;
@@ -83,7 +84,9 @@ const ReturnHandover = () => {
             category: result.data.data.products.map(p => p.grInventoryProduct?.product?.category?.name || p.category?.name || 'N/A').join(', '),
             subCategory: result.data.data.products.map(p => p.grInventoryProduct?.product?.subcategory?.name || p.subcategory?.name || 'N/A').join(', '),
             location: result.data.data.products.map(p => p.grDetails?.unit?.name || 'N/A').join(', '),
-            inventorProductId: result.data.data.products.map(p => p.inventorProductId).join(', ')
+            inventorProductId: result.data.data.products.map(p => p.inventorProductId).join(', '),
+            unassignRemark: result.data.data.products.map(p => p.unassignRemark || 'N/A').join(', '),
+              unassignCondition: result.data.data.products.map(p => p.unassignCondition || 'N/A').join(', ')
           }]);
         } else {
           setIsError(true);
@@ -106,6 +109,8 @@ const ReturnHandover = () => {
     columnHelper.accessor("serialNumber", { header: "Serial Number", size: 120 }),
     columnHelper.accessor("productName", { header: "Product Name", size: 150 }),
     columnHelper.accessor("category", { header: "Category", size: 120 }),
+    columnHelper.accessor("unassignCondition", { header: "Condition", size: 120 }),
+      columnHelper.accessor("unassignRemark", { header: "Previous Remark", size: 150 }),
     columnHelper.display({
       id: "status",
       header: "Status",
@@ -263,6 +268,7 @@ const ReturnHandover = () => {
 
       // Convert PDF to File object
       const pdfBlob = pdf.output('blob');
+        pdf.save(`Return_Handover_${rowData.assignedTo.user.name.replace(/\s+/g, '_')}.pdf`);
       const generatedFile = new File([pdfBlob], `Return_Handover_${rowData.assignedTo.user.name.replace(/\s+/g, '_')}.pdf`, { type: 'application/pdf' });
 
       // 2. Submit to backend
@@ -394,7 +400,7 @@ const ReturnHandover = () => {
           <Button
             className="Global-Button2"
             onClick={handleCompleteReturnHandover}
-            disabled={isSubmitting || !table.getIsSomeRowsSelected()}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>

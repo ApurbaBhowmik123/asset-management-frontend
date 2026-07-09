@@ -23,15 +23,12 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import InfoIcon from '@mui/icons-material/Info';
-import WarningIcon from '@mui/icons-material/Warning';
-import ErrorIcon from '@mui/icons-material/Error';
 import {
     MaterialReactTable,
     useMaterialReactTable,
     createMRTColumnHelper,
 } from "material-react-table";
 import { mkConfig, generateCsv, download } from "export-to-csv";
-import { useNavigate } from "react-router-dom";
 import { baseUrl } from "../../Api";
 
 
@@ -74,8 +71,6 @@ const BulkUpload = () => {
 
 
 
-    // Import success state
-    const [importResult, setImportResult] = useState(null);
     const validationData = uploadResponse?.data?.validation || {}
     const successCount = uploadResult.filter(item => item.success).length;
     const failureCount = uploadResult.filter(item => !item.success).length;
@@ -331,22 +326,6 @@ const BulkUpload = () => {
     // Render Validation Summary Component
     const renderValidationSummary = () => {
         if (!validationSummary) return null;
-        const getIcon = (severity) => {
-            switch (severity) {
-                case "error": return <ErrorIcon />;
-                case "warning": return <WarningIcon />;
-                default: return <CheckCircleOutlineIcon />;
-            }
-        };
-
-        const getColor = (severity) => {
-            switch (severity) {
-                case "error": return "#f44336";
-                case "warning": return "#ff9800";
-                default: return "#4caf50";
-            }
-        };
-
 
         return (
             <Card sx={{ mb: 3, border: "1px solid #e0e0e0" }}>
@@ -717,11 +696,11 @@ const BulkUpload = () => {
                 </Box> */}
                 <Box sx={{
                     width: {
-                        xs: "300px",
-                        sm: "500px",
-                        md: "800px",
-                        lg: "1020px",
-                        xl: "1400px"
+                        xs: "100%",
+                        sm: "100%",
+                        md: "100%",
+                        lg: "100%",
+                        xl: "100%"
                     },
                     overflow: "auto",
                     mx: "auto",

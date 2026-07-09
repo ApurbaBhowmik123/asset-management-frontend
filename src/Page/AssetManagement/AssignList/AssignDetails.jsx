@@ -69,7 +69,7 @@ const AssignDetails = () => {
               productName: product?.name || 'N/A',
               category: product?.category?.name || 'N/A',
               attributes: product?.specValues?.map(s => `${s.specField?.name}: ${s.value}`).join(', ') || 'N/A',
-              location: product?.grDetails?.unit?.name || 'N/A',
+              location: product?.location?.name || product?.unit?.name || 'N/A',
               inventorProductId: product.inventorProductId
             })));
           }

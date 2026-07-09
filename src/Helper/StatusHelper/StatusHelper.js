@@ -10,7 +10,7 @@ export const ProductRequestStatus = Object.freeze({
 
 const statusLabels = {
   InStock: "In Stock",
-  BLOCKED: "Blocked",
+  BLOCKED: "Assigned",
   Assigned: "Assigned",
   WRITE_OFF: "Write Off",
   E_WASTE: "E-WASTE",
@@ -19,7 +19,7 @@ const statusLabels = {
 
 const statusColors = {
   InStock: { color: "#28A745", bg: "#E6FFFA" },
-  BLOCKED: { color: "#DC2626", bg: "#FEE2E2" },
+  BLOCKED: { color: "#2563EB", bg: "#DBEAFE" },
   Assigned: { color: "#2563EB", bg: "#DBEAFE" },
   WRITE_OFF: { color: "#D97706", bg: "#FFF7E6" },
   E_WASTE: { color: "#D97706", bg: "#FFF7E6" },

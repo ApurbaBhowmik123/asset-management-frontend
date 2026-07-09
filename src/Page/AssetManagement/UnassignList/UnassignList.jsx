@@ -157,14 +157,14 @@ const UnassignList = () => {
                 </Box>
             ),
         }),
-        columnHelper.accessor('inventoryProductDetail.grInventoryProduct.product.name', {
-            header: 'Product Name',
-            size: 150,
-            Cell: ({ row }) => {
-                const names = row.original._group.map(g => g.inventoryProductDetail?.grInventoryProduct?.product?.name || 'N/A');
-                return names.join(', ');
-            }
-        }),
+        // columnHelper.accessor('inventoryProductDetail.grInventoryProduct.product.name', {
+        //     header: 'Product Name',
+        //     size: 150,
+        //     Cell: ({ row }) => {
+        //         const names = row.original._group.map(g => g.inventoryProductDetail?.grInventoryProduct?.product?.name || 'N/A');
+        //         return names.join(', ');
+        //     }
+        // }),
 
         // columnHelper.accessor('status', {
         //     header: 'Status',
@@ -189,7 +189,7 @@ const UnassignList = () => {
         //     },
         // }),
 
-        
+
 
         columnHelper.display({
             id: 'actions',
@@ -279,7 +279,7 @@ const UnassignList = () => {
 
 
 
-        columnHelper.accessor(row => row.inventoryProductDetail?.grInventoryProduct?.product?.name || 'Unknown Product', {
+        columnHelper.accessor(row => row.inventoryProductDetail?.grInventoryProduct?.category?.name || 'Unknown Product', {
             id: 'productName',
             header: 'Product Name',
             size: 160,
@@ -317,7 +317,7 @@ const UnassignList = () => {
                     assignment.assignedToLocation.unitlocation[0]?.unit?.name : 'N/A',
             location: assignment.assignedToUser ? assignment.assignedToUser.location?.name :
                 assignment.assignedToLocation ? assignment.assignedToLocation.name : 'N/A',
-            productName: assignment.inventoryProductDetail?.grInventoryProduct?.product?.name || 'Unknown Product',
+            productName: assignment.inventoryProductDetail?.grInventoryProduct?.category?.name || 'Unknown Product',
             brand: assignment.inventoryProductDetail?.grInventoryProduct?.product?.brand?.name || assignment.inventoryProductDetail?.grInventoryProduct?.brand?.name || 'N/A',
             attributes: (() => {
                 const specValues = assignment.inventoryProductDetail?.specValues?.length ? assignment.inventoryProductDetail.specValues : assignment.inventoryProductDetail?.grInventoryProduct?.product?.productSpecValue;

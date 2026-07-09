@@ -35,6 +35,7 @@ import ReturnHandover from "./Page/AssetManagement/ReturnHandover/ReturnHandover
 import UnassignList from "./Page/AssetManagement/UnassignList/UnassignList";
 import Handover from "./Page/AssetManagement/Handover/Handover";
 import AssignList from "./Page/AssetManagement/AssignList/AssignList";
+import ExpiredAssignList from "./Page/AssetManagement/ExpiredAssignList/ExpiredAssignList";
 import AssignDetails from "./Page/AssetManagement/AssignList/AssignDetails";
 // GR
 import CreateGr from "./Page/GrEntry/CreateGr";
@@ -79,6 +80,7 @@ import TotalAsset from "./Page/Reports/TotalAsset/TotalAsset";
 import AssetAging from "./Page/Reports/AssetAging/AssetAging";
 import EmployeeReport from "./Page/Reports/EmployeeReport/EmployeeReport";
 import SoftReport from "./Page/Reports/SoftReport/SoftReport";
+import AssetWarranty from "./Page/Reports/AssetWarranty/AssetWarranty";
 // Transfer
 import InitiateTransfer from "./Page/Transfer/InitiateTransfer";
 //  Request
@@ -165,6 +167,7 @@ const App = () => {
               {/* Allocation */}
               <Route path="/assetmanagement/assignasset" element={<AssignAsset />} />
               <Route path="/assetmanagement/assignlist" element={<AssignList />} />
+              <Route path="/assetmanagement/expired-assignlist" element={<ExpiredAssignList />} />
               <Route path="/assetmanagement/assigndetails/:id" element={<AssignDetails />} />
               <Route path="/assetmanagement/unassignasset" element={<UnassignAsset />} />
               <Route path="/assetmanagement/listHandhover" element={<ListHandHover />} />
@@ -192,6 +195,9 @@ const App = () => {
               <Route path="/reports/total-asset" element={<TotalAsset />} />
               <Route path="/reports/employee-report" element={<EmployeeReport />} />
               <Route path="/reports/soft-report" element={<SoftReport />} />
+              <Route path="/reports/asset-warranty" element={<AssetWarranty />} />
+              <Route path="/reports/asset-warranty-upcoming" element={<AssetWarranty />} />
+              <Route path="/reports/asset-warranty-expired" element={<AssetWarranty />} />
 
               {/* Request */}
               <Route path="/request/initiate" element={<Initiate />} />

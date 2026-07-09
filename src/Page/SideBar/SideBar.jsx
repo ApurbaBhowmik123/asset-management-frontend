@@ -12,7 +12,9 @@ import {
   Divider,
 } from "@mui/material";
 import ArrowIcon from "../../assets/Sidebarimages/Vector22.png";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+
+console.log("SIDEBAR LOADED - VERSION WITH WARRANTY MENUS");
 
 // Icons
 import logo from "../../assets/Sidebarimages/Layer 1 1.png";
@@ -482,6 +484,11 @@ const Sidebar = ({
                     requiredPermission: "read-asset"
                   },
                   {
+                    label: "Expired Assign List",
+                    path: "/assetmanagement/expired-assignlist",
+                    requiredPermission: "read-asset"
+                  },
+                  {
                     label: "Assign Handover",
                     path: "/assetmanagement/listhandhover",
                     requiredPermission: "update-asset"
@@ -539,11 +546,26 @@ const Sidebar = ({
               {renderItem("Stock", statusIcon, null, "status", true, null, "read-inventory")}
               <Collapse in={openSection === "status"} timeout="auto" unmountOnExit>
                 {renderSubItemList([
-                  {
-                    label: "All Asset",
-                    path: "/assetstatus/all-asset",
-                    requiredPermission: "read-inventory"
-                  },
+                    {
+                      label: "All Asset",
+                      path: "/assetstatus/all-asset",
+                      requiredPermission: "read-inventory"
+                    },
+                    {
+                      label: "Asset Warranty",
+                      path: "/reports/asset-warranty",
+                      requiredPermission: "read-inventory"
+                    },
+                    {
+                      label: "Upcoming Warranty Asset",
+                      path: "/reports/asset-warranty-upcoming",
+                      requiredPermission: "read-inventory"
+                    },
+                    {
+                      label: "Expiry Warranty Asset",
+                      path: "/reports/asset-warranty-expired",
+                      requiredPermission: "read-inventory"
+                    },
                   {
                     label: "Scrap Product List",
                     path: "/assetstatus/scrap-list",
@@ -554,13 +576,11 @@ const Sidebar = ({
                     path: "/assetstatus/write-off",
                     requiredPermission: "create-e-waste"
                   },
-                  ...(hasPermission("old-data-sync-module") ? [
-                    {
-                      label: "Bulk Upload",
-                      path: "/assetstatus/bulk-upload",
-                      requiredPermission: "create-inventory"
-                    }
-                  ] : []),
+                  {
+                    label: "Bulk Upload",
+                    path: "/assetstatus/bulk-upload",
+                    requiredPermission: "create-inventory"
+                  }
                 ])}
               </Collapse>
             </>
@@ -688,14 +708,29 @@ const Sidebar = ({
                     path: "/reports/asset-allocation",
                     requiredPermission: "read-report"
                   },
-                  {
-                    label: "Asset Location",
+                    {
+                      label: "Asset Location",
                     path: "/reports/asset-location",
                     requiredPermission: "read-report"
                   },
                   {
                     label: "Asset Aging",
                     path: "/reports/asset-aging",
+                    requiredPermission: "read-report"
+                  },
+                  {
+                    label: "Asset Warranty",
+                    path: "/reports/asset-warranty",
+                    requiredPermission: "read-report"
+                  },
+                  {
+                    label: "Upcoming Warranty Asset",
+                    path: "/reports/asset-warranty-upcoming",
+                    requiredPermission: "read-report"
+                  },
+                  {
+                    label: "Expiry Warranty Asset",
+                    path: "/reports/asset-warranty-expired",
                     requiredPermission: "read-report"
                   },
                   ...(hasPermission("read-soft-delete") ? [

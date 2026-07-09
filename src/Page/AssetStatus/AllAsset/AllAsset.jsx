@@ -313,431 +313,6 @@ const AllAsset = () => {
       setProductCategoryOptions([]);
     }
   };
-
-  // Fetch data from API
-  //   const fetchData = async () => {
-  //     setLoading(true);
-  //     try {
-  //       const token = localStorage.getItem("token");
-  //       if (!token) {
-  //         throw new Error("No authentication token found");
-  //       }
-
-  //       const { pageIndex, pageSize } = pagination;
-
-  //       // Build sort parameters
-  //       let sortBy = "name";
-  //       let sortOrder = "desc";
-  //       if (sorting.length > 0) {
-  //         sortBy = sorting[0].id;
-  //         sortOrder = sorting[0].desc ? "desc" : "asc";
-  //       }
-
-  //       // Build the API URL with query parameters
-  //       const url = new URL(`${baseUrl}/gr/inventory/all-assets`);
-  //       url.searchParams.append("page", (pageIndex + 1).toString());
-  //       url.searchParams.append("sortBy", sortBy);
-  //       url.searchParams.append("sortOrder", sortOrder);
-  //       url.searchParams.append("limit", pageSize.toString());
-
-  //       if (globalFilter) {
-  //         url.searchParams.append("search", globalFilter);
-  //       }
-
-  //       // Add all filters to API call if they're set
-  //       if (statusFilter !== "all") {
-  //         url.searchParams.append("status", statusFilter);
-  //       }
-  //       if (usedStatusFilter !== "all") {
-  //         url.searchParams.append("isUsed", usedStatusFilter === "Used");
-  //       }
-  //       if (installationStatusFilter !== "all") {
-  //         url.searchParams.append(
-  //           "installationStatus",
-  //           installationStatusFilter === "true"
-  //         );
-  //       }
-  //       if (assetIdFilter) {
-  //         url.searchParams.append("assetId", assetIdFilter);
-  //       }
-  //       if (unitFilter) {
-  //         url.searchParams.append("unit", unitFilter);
-  //       }
-  //       if (locationFilter) {
-  //         url.searchParams.append("location", locationFilter);
-  //       }
-  //       if (sapCodeFilter) {
-  //         url.searchParams.append("sapCode", sapCodeFilter);
-  //       }
-  //       if (usernameFilter) {
-  //         url.searchParams.append("username", usernameFilter);
-  //       }
-  //       if (assetTypeFilter) {
-  //         url.searchParams.append("assetType", assetTypeFilter);
-  //       }
-  //       if (serialNumberFilter) {
-  //         url.searchParams.append("serialNumber", serialNumberFilter);
-  //       }
-  //       if (descriptionFilter) {
-  //         url.searchParams.append("description", descriptionFilter);
-  //       }
-  //       if (emailFilter) {
-  //         url.searchParams.append("email", emailFilter);
-  //       }
-  //       if (departmentFilter) {
-  //         url.searchParams.append("department", departmentFilter);
-  //       }
-  //       if (makeFilter) {
-  //         url.searchParams.append("make", makeFilter);
-  //       }
-  //       if (modelFilter) {
-  //         url.searchParams.append("model", modelFilter);
-  //       }
-  //       if (grNoFilter) {
-  //         url.searchParams.append("grNo", grNoFilter);
-  //       }
-  //       if (poNoFilter) {
-  //         url.searchParams.append("poNo", poNoFilter);
-  //       }
-  //       if (invoiceNoFilter) {
-  //         url.searchParams.append("invoiceNo", invoiceNoFilter);
-  //       }
-  //       if (poValueFilter) {
-  //         url.searchParams.append("poValue", poValueFilter);
-  //       }
-  //       if (warrantyAmcFilter) {
-  //         url.searchParams.append("warrantyAmc", warrantyAmcFilter);
-  //       }
-  //       if (warrantyExpiryDateFilter) {
-  //         url.searchParams.append("warrantyExpiryDate", warrantyExpiryDateFilter);
-  //       }
-  //       if (lastAuditDateFilter) {
-  //         url.searchParams.append("lastAuditDate", lastAuditDateFilter);
-  //       }
-  //       if (maintenanceDueDateFilter) {
-  //         url.searchParams.append("maintenanceDueDate", maintenanceDueDateFilter);
-  //       }
-  //       if (lifecycleExDateFilter) {
-  //         url.searchParams.append("lifecycleExDate", lifecycleExDateFilter);
-  //       }
-  //       if (productCategoryFilter) {
-  //         url.searchParams.append("productCategory", productCategoryFilter);
-  //       }
-  //       if (invoiceDateFilter) {
-  //         url.searchParams.append("invoiceDate", invoiceDateFilter);
-  //       }
-  //       if (grDateFilter) {
-  //         url.searchParams.append("grDate", grDateFilter);
-  //       }
-  //       if (poDateFilter) {
-  //         url.searchParams.append("poDate", poDateFilter);
-  //       }
-  //       if (totalCostFilter) {
-  //         url.searchParams.append("totalCost", totalCostFilter);
-  //       }
-  //       if (acquisitionDateFilter) {
-  //         url.searchParams.append("acquisitionDate", acquisitionDateFilter);
-  //       }
-
-  //       // Add date range filters if they're set
-  //       if (startDate) {
-  //         url.searchParams.append("startDate", startDate);
-  //       }
-  //       if (endDate) {
-  //         url.searchParams.append("endDate", endDate);
-  //       }
-
-  //       console.log("API URL:", url.toString());
-
-  //       // Prepare request body with id and value for spec and software filters
-  //       const requestBody = {};
-
-  //       // Add spec field filters with actual IDs
-  // if (Object.keys(specFieldFilters).length > 0) {
-  //   requestBody.specFieldFilters = Object.entries(specFieldFilters).reduce(
-  //     (acc, [fieldName, filterValue]) => {
-  //       if (filterValue && specFieldIdMapping[fieldName]) {
-  //         acc.push({
-  //           id: specFieldIdMapping[fieldName], // Use the actual ID from mapping
-  //           value: filterValue
-  //         });
-  //       }
-  //       return acc;
-  //     },
-  //     [] // Start with an empty array
-  //   );
-  // }
-
-  // // Add software field filters with actual IDs
-  // if (Object.keys(softwareFieldFilters).length > 0) {
-  //   requestBody.softwareFieldFilters = Object.entries(softwareFieldFilters).reduce(
-  //     (acc, [fieldName, filterValue]) => {
-  //       if (filterValue && softwareIdMapping[fieldName]) {
-  //         acc.push({
-  //           id: softwareIdMapping[fieldName], // Use the actual ID from mapping
-  //           name: filterValue
-  //         });
-  //       }
-  //       return acc;
-  //     },
-  //     [] // Start with an empty array
-  //   );
-  // }
-
-  //       const response = await fetch(url.toString(), {
-  //         method: "POST",
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: Object.keys(requestBody).length > 0 ? JSON.stringify(requestBody) : undefined
-  //       });
-
-  //       console.log("Response status:", response.status);
-
-  //       if (!response.ok) {
-  //         const errorText = await response.text();
-  //         console.error("API Error:", errorText);
-  //         throw new Error(
-  //           `HTTP error! status: ${response.status}, message: ${errorText}`
-  //         );
-  //       }
-
-  //       const result = await response.json();
-  //       console.log("API Response:", result);
-
-  //       if (result.status && result.data) {
-  //         // First pass to collect all unique spec field names and IDs
-  //         const specFieldNames = new Set();
-  //         const softwareNames = new Set();
-  //         const specIdMap = {};
-  //         const softwareIdMap = {};
-
-  //         result.data.data.forEach((item) => {
-  //           // Collect spec field names and IDs
-  //           item.specValues?.forEach((spec) => {
-  //             if (spec.specField?.name) {
-  //               specFieldNames.add(spec.specField.name);
-  //               if (spec.specField?.id) {
-  //                 specIdMap[spec.specField.name] = spec.specField.id;
-  //               }
-  //             }
-  //           });
-
-  //           // Collect software names and IDs
-  //           item.softwareInstalls?.forEach((software) => {
-  //             if (software.softwares?.name) {
-  //               softwareNames.add(software.softwares.name);
-  //               if (software.softwares?.id) {
-  //                 softwareIdMap[software.softwares.name] = software.softwares.id;
-  //               }
-  //             }
-  //           });
-  //         });
-
-  //         // Update ID mappings
-  //         setSpecFieldIdMapping(specIdMap);
-  //         setSoftwareIdMapping(softwareIdMap);
-
-  //         // Transform data with dynamic spec fields
-  //         const transformedData = result.data.data.map((item) => {
-  //           // Create an object to hold all spec field values
-  //           const specFields = {};
-  //           specFieldNames.forEach((name) => {
-  //             const spec = item.specValues?.find(
-  //               (s) => s.specField?.name === name
-  //             );
-  //             specFields[name] = spec?.value || "NA";
-  //           });
-
-  //           // Create an object to hold all software values
-  //           const softwareFields = {};
-  //           softwareNames.forEach((name) => {
-  //             const software = item.softwareInstalls?.find(
-  //               (s) => s.softwares?.name === name
-  //             );
-  //             softwareFields[name] = software?.value || "NA";
-  //           });
-
-  //           // Get asset type and category
-  //           const assetType =
-  //             item.grInventoryProduct?.product?.category?.name || "NA";
-  //           const assignedUser = item.AssignProductDetails?.[0]?.assignedToUser;
-
-  //           // Get assigned status
-  //           const assignedStatus = item.assignedStatus || "NA";
-
-  //           return {
-  //             uuid: item.uuid,
-  //             id: item?.id,
-  //             username: assignedUser?.name || "NA",
-  //             assetType,
-  //             serialNumber: item.serialNo1 || "NA",
-  //             description: item.grInventoryProduct?.description || "NA",
-  //             assetTag: item.grInventoryProduct?.product?.uuid || "NA",
-  //             usedByEmail: assignedUser?.email || "NA",
-  //             sapCode: item.sapCode || "NA",
-  //             acquisitionDate: item.grInventoryProduct?.createdAt || "NA",
-  //             department: assignedUser?.department?.name || "NA",
-  //             unit: item.unit?.name || "NA",
-  //             location: item.location?.name || "NA",
-  //             assignedOn: item.createdAt || "NA",
-  //             make: item.grInventoryProduct?.product?.brand?.name || "NA",
-  //             model: item.grInventoryProduct?.product?.name || "NA",
-  //             serialNumberAlt: item.serialNo2 || "NA",
-  //             assetState: assignedStatus,
-  //             grNo: item?.grInventoryProduct?.grDetails?.grId || "NA",
-  //             poNo: item?.grInventoryProduct?.grDetails?.sapId || "NA",
-  //             poDate:
-  //               dateTimeHelper.formatDate(
-  //                 item?.grInventoryProduct?.grDetails?.sapDate
-  //               ) || "NA",
-  //             invoiceNo:
-  //               item?.grInventoryProduct?.grDetails?.invoiceNumber || "NA",
-  //             invoiceDate: item?.grInventoryProduct?.grDetails?.invoiceDate
-  //               ? dateTimeHelper.formatDate(
-  //                 item.grInventoryProduct.grDetails.invoiceDate
-  //               )
-  //               : "NA",
-
-  //             grDate:
-  //               dateTimeHelper.formatDate(
-  //                 item?.grInventoryProduct?.grDetails?.grDate
-  //               ) || "NA",
-  //             poValue: item.grInventoryProduct?.totalAmount || "NA",
-  //             poNumber: "NA",
-  //             warrantyAmc: item.grInventoryProduct?.warrantyTill || "NA",
-  //             warrantyExpiryDate: item.grInventoryProduct?.warrantyTill || "NA",
-  //             lastAuditDate: item.updatedAt || "NA",
-  //             totalCost: item.totalCost || "NA",
-  //             usedStatus: item.isUsed ? "Used" : "New",
-  //             status: assignedStatus,
-  //             isFree: item.isFree ? "Yes" : "No",
-  //             maintenanceFrequency:
-  //               item.grInventoryProduct?.maintenanceFrequency || "NA",
-  //             maintenanceDueDate:
-  //               item.grInventoryProduct?.maintenanceDueDate || "NA",
-  //             lifecycleExDate: item.grInventoryProduct?.lifecycleExDate || "NA",
-  //             grInventoryProductId: item.grInventoryProductId || "NA",
-  //             isUsed: item.isUsed ? "Yes" : "No",
-  //             createdBy: item.createdBy || "NA",
-  //             updatedBy: item.updatedBy || "NA",
-  //             createdAt: item.createdAt || "NA",
-  //             updatedAt: item.updatedAt || "NA",
-  //             productBrand: item.grInventoryProduct?.product?.brand?.name || "NA",
-  //             productCategory:
-  //               item.grInventoryProduct?.product?.category?.name || "NA",
-  //             ratePerPiece: item.grInventoryProduct?.ratePerPiece || "NA",
-  //             freeQty: item.grInventoryProduct?.freeQty || "NA",
-  //             quantity: item.grInventoryProduct?.quantity || "NA",
-  //             grDetailsId: item.grInventoryProduct?.grDetailsId || "NA",
-  //             installationStatus: item.installationStatus || false,
-  //             // Add all spec fields dynamically
-  //             ...Object.fromEntries(
-  //               Array.from(specFieldNames).map((name) => [name, specFields[name]])
-  //             ),
-  //             // Add all software fields dynamically
-  //             ...Object.fromEntries(
-  //               Array.from(softwareNames).map((name) => [
-  //                 name,
-  //                 softwareFields[name],
-  //               ])
-  //             ),
-  //           };
-  //         });
-
-  //         setData(transformedData);
-  //         setAllData(transformedData);
-  //         setTotalRows(result.data.total || 0);
-  //         setTotalPages(result.data.totalPages || 0);
-
-  //         // Generate dynamic columns for spec fields
-  //         const specColumns = Array.from(specFieldNames).map((name) => {
-  //           // Get unique values for this spec field
-  //           const uniqueValues = Array.from(new Set(
-  //             result.data.data
-  //               .map(item => {
-  //                 const spec = item.specValues?.find(s => s.specField?.name === name);
-  //                 return spec?.value || "NA";
-  //               })
-  //               .filter(value => value !== "NA" && value !== undefined && value !== null)
-  //           )).sort();
-
-  //           return {
-  //             accessorKey: name,
-  //             header: name,
-  //             size: 150,
-  //             Filter: () => (
-  //               <FormControl fullWidth variant="outlined" size="small">
-  //                 <StyledSelect
-  //                   value={specFieldFilters[name] || ""}
-  //                   onChange={(e) => handleSpecFieldFilterChange(name, e.target.value)}
-  //                   displayEmpty
-  //                 >
-  //                   <MenuItem value="">All {name}</MenuItem>
-  //                   {uniqueValues.map((value) => (
-  //                     <MenuItem key={value} value={value}>
-  //                       {value}
-  //                     </MenuItem>
-  //                   ))}
-  //                 </StyledSelect>
-  //               </FormControl>
-  //             ),
-  //             filterVariant: "custom",
-  //           };
-  //         });
-
-  //         // Generate dynamic columns for software fields
-  //         const softwareColumns = Array.from(softwareNames).map((name) => {
-  //           // Get unique values for this software field
-  //           const uniqueValues = Array.from(new Set(
-  //             result.data.data
-  //               .map(item => {
-  //                 const software = item.softwareInstalls?.find(s => s.softwares?.name === name);
-  //                 return software?.value || "NA";
-  //               })
-  //               .filter(value => value !== "NA" && value !== undefined && value !== null)
-  //           )).sort();
-
-  //           return {
-  //             accessorKey: name,
-  //             header: name,
-  //             size: 150,
-  //             Filter: () => (
-  //               <FormControl fullWidth variant="outlined" size="small">
-  //                 <StyledSelect
-  //                   value={softwareFieldFilters[name] || ""}
-  //                   onChange={(e) => handleSoftwareFieldFilterChange(name, e.target.value)}
-  //                   displayEmpty
-  //                 >
-  //                   <MenuItem value="">All {name}</MenuItem>
-  //                   {uniqueValues.map((value) => (
-  //                     <MenuItem key={value} value={value}>
-  //                       {value}
-  //                     </MenuItem>
-  //                   ))}
-  //                 </StyledSelect>
-  //               </FormControl>
-  //             ),
-  //             filterVariant: "custom",
-  //           };
-  //         });
-
-  //         setDynamicColumns([...specColumns, ...softwareColumns]);
-  //       } else {
-  //         console.error("API response format error:", result);
-  //         showSnackbar("Failed to load data: Invalid response format", "error");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching data:", error);
-  //       setData([]);
-  //       setAllData([]);
-  //       showSnackbar(`Failed to load data: ${error.message}`, "error");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -1336,35 +911,35 @@ const AllAsset = () => {
     setOpenModal(true);
   };
 
-  const addSapCode = async () => {
-    if (!selectedAsset) return;
+  // const addSapCode = async () => {
+  //   if (!selectedAsset) return;
 
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${baseUrl}/gr/add-sap-code/${selectedAsset}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ sapCode: sapCodeInput }),
-        }
-      );
+  //   try {
+  //     const token = localStorage.getItem("token");
+  //     const response = await fetch(
+  //       `${baseUrl}/gr/add-sap-code/${selectedAsset}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({ sapCode: sapCodeInput }),
+  //       }
+  //     );
 
-      if (!response.ok) {
-        throw new Error("Failed to add SAP code");
-      }
+  //     if (!response.ok) {
+  //       throw new Error("Failed to add SAP code");
+  //     }
 
-      setOpenModal(false);
-      showSnackbar("SAP code added successfully!", "success");
-      fetchData();
-    } catch (error) {
-      console.error("Error adding SAP code:", error);
-      showSnackbar("Failed to add SAP code", "error");
-    }
-  };
+  //     setOpenModal(false);
+  //     showSnackbar("SAP code added successfully!", "success");
+  //     fetchData();
+  //   } catch (error) {
+  //     console.error("Error adding SAP code:", error);
+  //     showSnackbar("Failed to add SAP code", "error");
+  //   }
+  // };
 
   const handleDeleteAsset = (assetId) => {
     setAssetToDelete(assetId);
@@ -1529,6 +1104,11 @@ const AllAsset = () => {
       Cell: ({ cell, row }) => {
         const installationStatus = cell.getValue();
         const assetType = row.original.assetType;
+        const isUntagged = ["Untagged", "untagged"].includes(
+          String(row.original?.status || row.original?.assetState || "")
+        );
+        const shouldShowInstallationButton =
+          assetType === "IT Assets" && !installationStatus && !isUntagged;
 
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -1546,7 +1126,7 @@ const AllAsset = () => {
               }}
             />
 
-            {assetType === "IT Assets" && !installationStatus && (
+            {shouldShowInstallationButton && (
               <IconButton
                 onClick={() => handleSetEditing(row.original)}
                 size="small"
@@ -1602,7 +1182,7 @@ const AllAsset = () => {
             </IconButton>
           ) : null}
 
-          {/* {userRole === "Super Admin" && (
+          {userRole === "Super Admin" && (
             <IconButton
               onClick={() => handleDeleteAsset(row.original.id)}
               size="small"
@@ -1610,7 +1190,7 @@ const AllAsset = () => {
             >
               <img src={Deleteicon1} alt="delete" />
             </IconButton>
-          )} */}
+          )}
         </Box>
       ),
     }),
@@ -2344,7 +1924,7 @@ const AllAsset = () => {
         />
       ) : (
         <Box>
-          <Dialog
+          {/* <Dialog
             open={openModal}
             onClose={() => setOpenModal(false)}
             maxWidth="xs"
@@ -2382,7 +1962,7 @@ const AllAsset = () => {
                 Add
               </Button>
             </Box>
-          </Dialog>
+          </Dialog> */}
 
           {/* Delete Confirmation Modal */}
           <Dialog

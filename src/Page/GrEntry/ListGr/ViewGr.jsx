@@ -27,9 +27,15 @@ const BulkTagForm = ({ product, onSuccess, setSnackbar }) => {
 
   useEffect(() => {
     const fetchCategorySpecs = async () => {
+      const categoryId = Number(product?.categoryId);
+      if (!Number.isInteger(categoryId) || categoryId <= 0) {
+        setSpecFields([]);
+        return;
+      }
+
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`${baseUrl}/catalog/categories/${product.categoryId}`, {
+        const res = await axios.get(`${baseUrl}/catalog/categories/${categoryId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const specFieldsData = res.data.data?.categorySpecFields?.map(csf => csf.specField).filter(Boolean) || [];
@@ -43,11 +49,16 @@ const BulkTagForm = ({ product, onSuccess, setSnackbar }) => {
     const initialList = product.untaggedDetails.map(detail => ({
       inventoryProductDetailId: detail.id,
       uuid: detail.uuid,
-      serialNo1: "",
-      sapCode: "",
-      modelName: "",
-      warrantyTill: null,
-      specValues: {}
+      serialNo1: detail.serialNo1 || "",
+      sapCode: detail.sapCode || "",
+      modelName: detail.modelName || "",
+      warrantyTill: detail.warrantyTill ? new Date(detail.warrantyTill) : product.warrantyTill || null,
+      specValues: (detail.specValues || []).reduce((acc, specValue) => {
+        if (specValue?.specField?.id) {
+          acc[String(specValue.specField.id)] = specValue.value || "";
+        }
+        return acc;
+      }, {})
     }));
     setTagDataList(initialList);
   }, [product]);
@@ -101,8 +112,9 @@ const BulkTagForm = ({ product, onSuccess, setSnackbar }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      setTagDataList([]);
       setSnackbar({ open: true, message: "All items tagged successfully", severity: "success" });
-      if (onSuccess) onSuccess();
+      if (onSuccess) await onSuccess(product);
     } catch (error) {
       setSnackbar({ open: true, message: error.response?.data?.message || "Failed to tag items", severity: "error" });
     } finally {
@@ -110,10 +122,10 @@ const BulkTagForm = ({ product, onSuccess, setSnackbar }) => {
     }
   };
 
-  if (specFields.length === 0 && tagDataList.length === 0) return <Typography p={2}>Loading...</Typography>;
+  if (specFields.length === 0 && tagDataList.length === 0) return <Typography p={2}>No untagged items pending.</Typography>;
 
   return (
-    <Box sx={{ p: 2, bgcolor: "#f5f5f5", borderRadius: 2, border: "1px solid #ddd", m: 2 }}>
+    <Box sx={{ p: 2, bgcolor: "#f5f5f5", borderRadius: 2, border: "1px solid #ddd", m: 2, maxHeight: "70vh", overflow: "auto" }}>
       <Typography variant="subtitle1" fontWeight="bold" mb={2}>
         Bulk Tagging: {product.category?.name} ({product.untaggedCount} Items)
       </Typography>
@@ -172,7 +184,7 @@ const BulkTagForm = ({ product, onSuccess, setSnackbar }) => {
         </Paper>
       ))}
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2, position: "sticky", bottom: 0, bgcolor: "#f5f5f5", py: 1, borderTop: "1px solid #ddd", zIndex: 1 }}>
         <Button variant="contained" color="primary" onClick={handleSaveAll} disabled={isSaving} sx={{ px: 4 }}>
           {isSaving ? "Saving..." : "Save All"}
         </Button>
@@ -185,9 +197,8 @@ const ViewGr = () => {
   const [grDetails, setGrDetails] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [untaggedProducts, setUntaggedProducts] = useState([]);
-  const [softwareProducts, setSoftwareProducts] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
-  
+
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -200,7 +211,7 @@ const ViewGr = () => {
       const token = localStorage.getItem("token");
       const res = await axios.get(`${baseUrl}/gr/${id}?t=${new Date().getTime()}`, { headers: { Authorization: `Bearer ${token}` } });
       setGrDetails(res.data.data);
-      
+
       const taggedItemsList = [];
       res.data.data.inventoryProducts.forEach((ip) => {
         ip.inventoryDetails.forEach((det) => {
@@ -212,44 +223,74 @@ const ViewGr = () => {
       setTableData(taggedItemsList);
 
       const untaggedProductsList = res.data.data.inventoryProducts.map(ip => {
-        const untaggedDetails = ip.inventoryDetails.filter(d => d.assignedStatus === "Untagged");
+        const untaggedDetails = ip.inventoryDetails.filter(d =>
+          String(d.assignedStatus || "").trim().toLowerCase() === "untagged"
+        );
         return {
           ...ip,
+          categoryId: ip.categoryId || ip.category?.id,
+          brandId: ip.brandId || ip.brand?.id,
+          productId: ip.productId || ip.product?.id,
           untaggedDetails,
-          untaggedCount: untaggedDetails.length
+          untaggedCount: untaggedDetails.length,
+          grId: res.data.data.grId || res.data.data.uuid || "N/A",
+          invoiceNumber: res.data.data.invoiceNumber || res.data.data.sapId || "N/A",
+          vendorName: res.data.data.vendor?.name || "N/A",
+          grDate: res.data.data.grDate || null,
+          warrantyTill: ip.warrantyTill ? new Date(ip.warrantyTill) : null,
+          displayAssetReference: ip.category?.name || ip.product?.category?.name || ip.product?.name || "Unknown",
+          displayBrand: ip.brand?.name || ip.product?.brand?.name || "N/A",
         };
-      }).filter(ip => ip.untaggedCount > 0 && ip.categoryId);
+      }).filter(ip => ip.untaggedCount > 0);
       setUntaggedProducts(untaggedProductsList);
 
-      const softwareList = res.data.data.inventoryProducts.filter(ip => ip.softwareId);
-      setSoftwareProducts(softwareList);
     } catch (error) {
       console.error("error fetching GR details", error);
       setSnackbar({ open: true, message: "Error fetching GR details", severity: "error" });
     }
   };
 
-  const columnHelper = createMRTColumnHelper();
-  
-  const untaggedColumns = [
-    columnHelper.accessor("category.name", { header: "Asset Reference", size: 150 }),
-    columnHelper.accessor("brand.name", { header: "Brand", size: 150 }),
-    columnHelper.accessor("quantity", { header: "Total Quantity", size: 120 }),
-    columnHelper.accessor("untaggedCount", { header: "Untagged Quantity", size: 120 })
-  ];
+  const handleBulkTagSuccess = async (product) => {
+    setUntaggedProducts((prev) =>
+      prev.filter((item) => item.id !== product.id && item.productId !== product.productId)
+    );
+    await fetchGrDetails();
+  };
 
-  const softwareColumns = [
-    columnHelper.accessor("software.name", { header: "Software", size: 150 }),
-    columnHelper.accessor("quantity", { header: "Added Quantity", size: 120 }),
-    columnHelper.accessor("ratePerPiece", { header: "Rate", size: 120 }),
-    columnHelper.accessor("totalAmount", { header: "Net Amount", size: 120 })
+  const columnHelper = createMRTColumnHelper();
+
+  const untaggedColumns = [
+    columnHelper.accessor("displayAssetReference", { header: "Asset Reference", size: 150 }),
+    columnHelper.accessor("displayBrand", { header: "Brand", size: 150 }),
+    columnHelper.accessor("quantity", { header: "Total Quantity", size: 120 }),
+    columnHelper.accessor("untaggedCount", { header: "Untagged Quantity", size: 120 }),
+    columnHelper.accessor("grId", {
+      header: "GR ID",
+      size: 140,
+      Cell: ({ cell }) => cell.getValue() || "-",
+    }),
+    columnHelper.accessor("invoiceNumber", {
+      header: "Invoice No",
+      size: 140,
+      Cell: ({ cell }) => cell.getValue() || "-",
+    }),
+    columnHelper.accessor("vendorName", {
+      header: "Vendor",
+      size: 160,
+      Cell: ({ cell }) => cell.getValue() || "-",
+    }),
+    columnHelper.accessor("grDate", {
+      header: "GR Date",
+      size: 140,
+      Cell: ({ cell }) => cell.getValue() ? dateTimeHelper.formatDate(cell.getValue()) : "-",
+    })
   ];
 
   const taggedColumns = [
     columnHelper.accessor("grInventoryProduct.category.name", { header: "Asset Reference", size: 150 }),
     columnHelper.accessor("grInventoryProduct.brand.name", { header: "Brand", size: 100 }),
-    columnHelper.accessor("modelName", { 
-      header: "Model Name", 
+    columnHelper.accessor("modelName", {
+      header: "Model Name",
       size: 120,
       Cell: ({ cell }) => cell.getValue() || "-"
     }),
@@ -263,8 +304,8 @@ const ViewGr = () => {
       }
     }),
     columnHelper.accessor("uuid", { header: "Asset ID", size: 150 }),
-    columnHelper.accessor("assignedStatus", { 
-      header: "Status", 
+    columnHelper.accessor("assignedStatus", {
+      header: "Status",
       size: 100,
       Cell: ({ cell }) => <span style={{ color: "green", fontWeight: "bold" }}>{cell.getValue()}</span>
     }),
@@ -324,9 +365,9 @@ const ViewGr = () => {
             enableGlobalFilter={false}
             enableColumnActions={false}
             renderDetailPanel={({ row }) => (
-              <BulkTagForm 
-                product={row.original} 
-                onSuccess={fetchGrDetails} 
+              <BulkTagForm
+                product={row.original}
+                onSuccess={handleBulkTagSuccess}
                 setSnackbar={setSnackbar}
               />
             )}
@@ -352,9 +393,9 @@ const ViewGr = () => {
         </Box>
       )}
 
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={4000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
